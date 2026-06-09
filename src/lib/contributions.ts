@@ -40,6 +40,7 @@ export interface FetchOptions {
  * CDN revalidations with the same frozen days forever (and grow unbounded).
  */
 const CACHE_TTL_MS = 30 * 60 * 1000;
+const CACHE_MAX_ENTRIES = 500;
 const sessionCache = new Map<
   string,
   { days: ContributionDay[]; fetchedAt: number }
@@ -61,6 +62,13 @@ async function withRetry<T>(fn: () => Promise<T>, retries: number): Promise<T> {
         error.status !== undefined &&
         error.status >= 400 &&
         error.status < 500
+      )
+        throw error;
+      // an aborted/timed-out signal stays aborted — retrying is a guaranteed
+      // failure that only adds the backoff sleep to the caller's deadline.
+      if (
+        error instanceof DOMException &&
+        (error.name === "AbortError" || error.name === "TimeoutError")
       )
         throw error;
       if (attempt === retries) break;
@@ -122,6 +130,13 @@ export async function fetchContributions(
     return json.contributions ?? [];
   }, options.retries ?? 3);
 
+  // the TTL handles staleness; this bounds cardinality (expired entries are
+  // only evicted lazily, so the map would otherwise grow with every distinct
+  // account a warm instance ever serves). Map keeps insertion order.
+  if (sessionCache.size >= CACHE_MAX_ENTRIES) {
+    const oldest = sessionCache.keys().next().value;
+    if (oldest !== undefined) sessionCache.delete(oldest);
+  }
   sessionCache.set(cacheKey, { days, fetchedAt: Date.now() });
   return { username: name, days };
 }

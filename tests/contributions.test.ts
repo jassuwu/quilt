@@ -85,6 +85,19 @@ describe("fetchContributions", () => {
     }
   });
 
+  test("fails fast on abort/timeout instead of a dead retry", async () => {
+    clearCache();
+    let calls = 0;
+    const fetchImpl = (async () => {
+      calls += 1;
+      throw new DOMException("timed out", "TimeoutError");
+    }) as unknown as typeof fetch;
+    await expect(
+      fetchContributions("octocat", { fetchImpl, retries: 3 }),
+    ).rejects.toBeInstanceOf(DOMException);
+    expect(calls).toBe(1);
+  });
+
   test("fails fast on 4xx instead of retrying", async () => {
     clearCache();
     let calls = 0;
