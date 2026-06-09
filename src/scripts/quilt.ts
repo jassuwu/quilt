@@ -216,6 +216,13 @@ function refreshEmbed(): void {
       ...embedOptions(),
       embed: true,
     });
+    // the real embed keeps its fixed size for <img> use; the on-page preview
+    // scales to the column instead of overflowing into a scrollbar
+    const svg = embedPreview.querySelector("svg");
+    if (svg) {
+      svg.style.maxWidth = "100%";
+      svg.style.height = "auto";
+    }
   }
   renderPresets();
   renderEmbed();
