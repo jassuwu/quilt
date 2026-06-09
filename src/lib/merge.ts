@@ -1,7 +1,10 @@
 import type { AccountContributions, ContributionDay, Quilt } from "./types";
 import { computeThresholds, levelForCount } from "./levels";
 
-function computeStreaks(days: ContributionDay[]): { longest: number; current: number } {
+function computeStreaks(days: ContributionDay[]): {
+  longest: number;
+  current: number;
+} {
   let longest = 0;
   let run = 0;
   for (const day of days) {

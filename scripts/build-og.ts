@@ -67,5 +67,8 @@ const resvg = new Resvg(svg, {
   fitTo: { mode: "width", value: W },
   font: { loadSystemFonts: true, defaultFontFamily: "Helvetica" },
 });
-await writeFile(join(outDir, "default.png"), Buffer.from(resvg.render().asPng()));
+await writeFile(
+  join(outDir, "default.png"),
+  Buffer.from(resvg.render().asPng()),
+);
 console.log("✓ public/og/default.png");

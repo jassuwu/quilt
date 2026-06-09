@@ -4,8 +4,8 @@ dist/
 .astro/
 .vercel/
 
-# generated assets
-public/og/
+# generated assets (favicons, manifest, OG cards)
+public/
 
 # remotion has its own prettier config
 remotion/

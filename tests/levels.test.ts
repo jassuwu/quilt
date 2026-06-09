@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { type Thresholds, computeThresholds, hexForLevel, levelForCount } from "../src/lib/levels";
+import {
+  type Thresholds,
+  computeThresholds,
+  hexForLevel,
+  levelForCount,
+} from "../src/lib/levels";
 
 describe("hexForLevel", () => {
   test("maps each level to its green", () => {

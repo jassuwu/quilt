@@ -47,13 +47,16 @@ describe("fetchContributions", () => {
 
   test("throws a friendly error for unknown users", async () => {
     clearCache();
-    const fetchImpl = (async () => new Response("", { status: 404 })) as unknown as typeof fetch;
+    const fetchImpl = (async () =>
+      new Response("", { status: 404 })) as unknown as typeof fetch;
     await expect(
       fetchContributions("definitely-not-real-xyz", { fetchImpl, retries: 0 }),
     ).rejects.toBeInstanceOf(ContributionsError);
   });
 
   test("rejects invalid usernames before fetching", async () => {
-    await expect(fetchContributions("bad name")).rejects.toBeInstanceOf(ContributionsError);
+    await expect(fetchContributions("bad name")).rejects.toBeInstanceOf(
+      ContributionsError,
+    );
   });
 });

@@ -3,7 +3,20 @@ import { hexForLevel } from "../lib/levels";
 import { mergeContributions } from "../lib/merge";
 import type { AccountContributions, Quilt } from "../lib/types";
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 const CELL = 11;
 const STEP = 14; // cell + gap
 const TOP = 18; // room for month labels
@@ -57,7 +70,10 @@ function renderStats(quilt: Quilt): void {
   const n = (v: number) => v.toLocaleString("en-US");
   statsEl.innerHTML = [
     stat(n(quilt.total), "contributions"),
-    stat(n(quilt.usernames.length), quilt.usernames.length === 1 ? "account" : "accounts"),
+    stat(
+      n(quilt.usernames.length),
+      quilt.usernames.length === 1 ? "account" : "accounts",
+    ),
     stat(`${n(quilt.longestStreak)}`, "longest streak"),
     stat(`${n(quilt.currentStreak)}`, "current streak"),
   ].join("");
@@ -68,7 +84,8 @@ function renderGraph(quilt: Quilt): string {
   const first = utcDate(quilt.from);
   const firstSunday = new Date(first);
   firstSunday.setUTCDate(first.getUTCDate() - first.getUTCDay());
-  const colOf = (d: Date) => Math.floor((d.getTime() - firstSunday.getTime()) / (7 * 86_400_000));
+  const colOf = (d: Date) =>
+    Math.floor((d.getTime() - firstSunday.getTime()) / (7 * 86_400_000));
   const numCols = colOf(utcDate(quilt.to)) + 1;
   const width = LEFT + numCols * STEP;
   const height = TOP + 7 * STEP;
@@ -131,18 +148,29 @@ async function run(usernames: string[]): Promise<void> {
     setStatus("Add at least one GitHub username.", true);
     return;
   }
-  setStatus(`Stitching ${usernames.length} account${usernames.length === 1 ? "" : "s"}…`);
+  setStatus(
+    `Stitching ${usernames.length} account${usernames.length === 1 ? "" : "s"}…`,
+  );
 
-  const settled = await Promise.allSettled(usernames.map((u) => fetchContributions(u)));
+  const settled = await Promise.allSettled(
+    usernames.map((u) => fetchContributions(u)),
+  );
   const sources: AccountContributions[] = [];
   const errors: { username: string; message: string }[] = [];
   settled.forEach((outcome, i) => {
     if (outcome.status === "fulfilled") sources.push(outcome.value);
-    else errors.push({ username: usernames[i], message: errorMessage(outcome.reason) });
+    else
+      errors.push({
+        username: usernames[i],
+        message: errorMessage(outcome.reason),
+      });
   });
 
   if (!sources.length) {
-    setStatus(errors.map((e) => `${e.username}: ${e.message}`).join(" · "), true);
+    setStatus(
+      errors.map((e) => `${e.username}: ${e.message}`).join(" · "),
+      true,
+    );
     return;
   }
 
@@ -153,7 +181,10 @@ async function run(usernames: string[]): Promise<void> {
   result?.classList.add("flex");
 
   if (errors.length) {
-    setStatus(`Skipped ${errors.map((e) => e.username).join(", ")} — ${errors[0].message}.`, true);
+    setStatus(
+      `Skipped ${errors.map((e) => e.username).join(", ")} — ${errors[0].message}.`,
+      true,
+    );
   } else {
     setStatus("");
   }
@@ -167,7 +198,9 @@ form?.addEventListener("submit", (event) => {
 });
 
 // Hydrate from a shared ?u=a,b link.
-const fromUrl = parseUsernames(new URLSearchParams(location.search).get("u") ?? "");
+const fromUrl = parseUsernames(
+  new URLSearchParams(location.search).get("u") ?? "",
+);
 if (fromUrl.length && input) {
   input.value = fromUrl.join(", ");
   void run(fromUrl);

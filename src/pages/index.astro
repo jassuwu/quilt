@@ -3,14 +3,19 @@ import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout>
-  <main class="mx-auto flex min-h-dvh max-w-3xl flex-col gap-10 px-5 py-12 sm:py-16">
+  <main
+    class="mx-auto flex min-h-dvh max-w-3xl flex-col gap-10 px-5 py-12 sm:py-16"
+  >
     <header class="flex flex-col gap-3">
-      <h1 class="font-display text-5xl font-bold tracking-tight text-text sm:text-6xl">
+      <h1
+        class="font-display text-5xl font-bold tracking-tight text-text sm:text-6xl"
+      >
         quilt<span class="text-stitch">.</span>
       </h1>
       <p class="max-w-xl text-pretty text-lg text-muted">
-        Your contributions, all of them, in one green grid. Merge every GitHub account you have into
-        a single quilt — so your real activity finally looks as busy as it is.
+        Your contributions, all of them, in one green grid. Merge every GitHub
+        account you have into a single quilt — so your real activity finally
+        looks as busy as it is.
       </p>
     </header>
 
@@ -34,21 +39,41 @@ import Layout from "../layouts/Layout.astro";
       </button>
     </form>
 
-    <p id="quilt-status" class="hidden text-sm text-muted" role="status" aria-live="polite"></p>
+    <p
+      id="quilt-status"
+      class="hidden text-sm text-muted"
+      role="status"
+      aria-live="polite"
+    >
+    </p>
 
     <section id="quilt-result" class="hidden flex-col gap-6">
       <dl id="quilt-stats" class="flex flex-wrap gap-x-10 gap-y-4"></dl>
 
-      <div class="overflow-x-auto rounded-xl border border-seam bg-surface p-4 sm:p-5">
+      <div
+        class="overflow-x-auto rounded-xl border border-seam bg-surface p-4 sm:p-5"
+      >
         <div id="quilt-graph" class="min-w-max"></div>
-        <div class="mt-3 flex items-center justify-end gap-2 text-xs text-muted">
+        <div
+          class="mt-3 flex items-center justify-end gap-2 text-xs text-muted"
+        >
           <span>Less</span>
           <span class="inline-flex items-center gap-[3px]">
-            <span class="inline-block size-[11px] rounded-[2px]" style="background:#161b22"></span>
-            <span class="inline-block size-[11px] rounded-[2px]" style="background:#0e4429"></span>
-            <span class="inline-block size-[11px] rounded-[2px]" style="background:#006d32"></span>
-            <span class="inline-block size-[11px] rounded-[2px]" style="background:#26a641"></span>
-            <span class="inline-block size-[11px] rounded-[2px]" style="background:#39d353"></span>
+            <span
+              class="inline-block size-[11px] rounded-[2px]"
+              style="background:#161b22"></span>
+            <span
+              class="inline-block size-[11px] rounded-[2px]"
+              style="background:#0e4429"></span>
+            <span
+              class="inline-block size-[11px] rounded-[2px]"
+              style="background:#006d32"></span>
+            <span
+              class="inline-block size-[11px] rounded-[2px]"
+              style="background:#26a641"></span>
+            <span
+              class="inline-block size-[11px] rounded-[2px]"
+              style="background:#39d353"></span>
           </span>
           <span>More</span>
         </div>

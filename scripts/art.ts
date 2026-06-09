@@ -51,15 +51,21 @@ function svg(body: string): string {
 
 /** Rounded dark tile — the browser-tab favicon. */
 export function faviconSvg(): string {
-  return svg(`<rect width="${VIEW}" height="${VIEW}" rx="14" fill="${C.bg}"/>${patch(9)}`);
+  return svg(
+    `<rect width="${VIEW}" height="${VIEW}" rx="14" fill="${C.bg}"/>${patch(9)}`,
+  );
 }
 
 /** Full-bleed square — apple-touch + standard PWA icons (the OS rounds it). */
 export function solidSvg(): string {
-  return svg(`<rect width="${VIEW}" height="${VIEW}" fill="${C.bg}"/>${patch(11)}`);
+  return svg(
+    `<rect width="${VIEW}" height="${VIEW}" fill="${C.bg}"/>${patch(11)}`,
+  );
 }
 
 /** Full-bleed with a generous safe zone for Android maskable icons. */
 export function maskableSvg(): string {
-  return svg(`<rect width="${VIEW}" height="${VIEW}" fill="${C.bg}"/>${patch(15)}`);
+  return svg(
+    `<rect width="${VIEW}" height="${VIEW}" fill="${C.bg}"/>${patch(15)}`,
+  );
 }

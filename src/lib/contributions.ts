@@ -1,4 +1,8 @@
-import type { AccountContributions, ContributionDay, ContributionsApiResponse } from "./types";
+import type {
+  AccountContributions,
+  ContributionDay,
+  ContributionsApiResponse,
+} from "./types";
 
 const API_BASE = "https://github-contributions-api.jogruber.de/v4";
 
@@ -42,7 +46,8 @@ async function withRetry<T>(fn: () => Promise<T>, retries: number): Promise<T> {
     } catch (error) {
       lastError = error;
       // A missing user will never succeed — fail fast.
-      if (error instanceof ContributionsError && error.status === 404) throw error;
+      if (error instanceof ContributionsError && error.status === 404)
+        throw error;
       if (attempt === retries) break;
       await sleep(250 * 2 ** attempt);
     }
@@ -61,7 +66,10 @@ export async function fetchContributions(
 ): Promise<AccountContributions> {
   const name = username.trim();
   if (!isValidUsername(name)) {
-    throw new ContributionsError(`"${username}" isn't a valid GitHub username`, username);
+    throw new ContributionsError(
+      `"${username}" isn't a valid GitHub username`,
+      username,
+    );
   }
 
   const year = options.year ?? "last";
@@ -78,10 +86,18 @@ export async function fetchContributions(
       headers: { Accept: "application/json" },
     });
     if (res.status === 404) {
-      throw new ContributionsError(`GitHub user "${name}" not found`, name, 404);
+      throw new ContributionsError(
+        `GitHub user "${name}" not found`,
+        name,
+        404,
+      );
     }
     if (!res.ok) {
-      throw new ContributionsError(`Couldn't load "${name}" (HTTP ${res.status})`, name, res.status);
+      throw new ContributionsError(
+        `Couldn't load "${name}" (HTTP ${res.status})`,
+        name,
+        res.status,
+      );
     }
     const json = (await res.json()) as ContributionsApiResponse;
     return json.contributions ?? [];

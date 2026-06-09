@@ -30,7 +30,8 @@ function pngToIco(png: Buffer, size: number): Buffer {
 const manifest = {
   name: "quilt",
   short_name: "quilt",
-  description: "Merge every GitHub account's contribution graph into one quilt of green.",
+  description:
+    "Merge every GitHub account's contribution graph into one quilt of green.",
   start_url: "/",
   display: "standalone",
   background_color: C.bg,
@@ -38,12 +39,18 @@ const manifest = {
   icons: [
     { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
     { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
-    { src: "/icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    {
+      src: "/icon-512-maskable.png",
+      sizes: "512x512",
+      type: "image/png",
+      purpose: "maskable",
+    },
   ],
 };
 
 await mkdir(publicDir, { recursive: true });
-const write = (name: string, data: string | Buffer) => writeFile(join(publicDir, name), data);
+const write = (name: string, data: string | Buffer) =>
+  writeFile(join(publicDir, name), data);
 
 await write("favicon.svg", faviconSvg());
 await write("favicon.ico", pngToIco(toPng(faviconSvg(), 32), 32));
@@ -53,4 +60,6 @@ await write("icon-512.png", toPng(solidSvg(), 512));
 await write("icon-512-maskable.png", toPng(maskableSvg(), 512));
 await write("site.webmanifest", JSON.stringify(manifest, null, 2));
 
-console.log("✓ favicon.svg, favicon.ico, apple-touch-icon, icon-192/512(+maskable), site.webmanifest");
+console.log(
+  "✓ favicon.svg, favicon.ico, apple-touch-icon, icon-192/512(+maskable), site.webmanifest",
+);

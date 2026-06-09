@@ -29,7 +29,9 @@ export function computeThresholds(counts: number[]): Thresholds {
   const active = counts.filter((c) => c > 0).sort((a, b) => a - b);
   if (active.length === 0) return [1, 2, 3];
   const at = (p: number) =>
-    active[Math.min(active.length - 1, Math.max(0, Math.ceil(p * active.length) - 1))];
+    active[
+      Math.min(active.length - 1, Math.max(0, Math.ceil(p * active.length) - 1))
+    ];
   let t1 = at(0.25);
   let t2 = at(0.5);
   let t3 = at(0.75);
