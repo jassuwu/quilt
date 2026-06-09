@@ -158,13 +158,14 @@ function embedUrl(): string {
 }
 
 // one quiet control instead of a wall of chips — "custom" only appears
-// once the pickers have been touched
+// once the pickers have been touched (disabled too: iOS's native picker
+// ignores `hidden` on options and would otherwise offer it)
 function populateThemeSelect(): void {
   if (!embedTheme) return;
   embedTheme.innerHTML = [
     `<option value="">default</option>`,
     ...Object.keys(PRESETS).map((k) => `<option value="${k}">${k}</option>`),
-    `<option value="custom" hidden>custom</option>`,
+    `<option value="custom" hidden disabled>custom</option>`,
   ].join("");
 }
 
@@ -356,6 +357,13 @@ embedTabs?.addEventListener("click", (event) => {
 });
 
 embedTheme?.addEventListener("change", () => {
+  // belt-and-braces for pickers that still offer "custom": leave the
+  // pickers exactly as they are
+  if (embedTheme.value === "custom") {
+    activePreset = null;
+    refreshEmbed();
+    return;
+  }
   const preset = Object.hasOwn(PRESETS, embedTheme.value)
     ? PRESETS[embedTheme.value]
     : undefined;
