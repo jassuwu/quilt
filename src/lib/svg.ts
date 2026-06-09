@@ -24,25 +24,89 @@ const utcDate = (iso: string): Date => new Date(`${iso}T00:00:00Z`);
 
 export interface RenderOptions {
   theme?: Theme;
+  /** Override the card background (hex). */
+  bg?: string;
+  /** Base color for the ramp (hex); levels 1–4 are derived from it. */
+  color?: string;
   /** Wrap in a themed, padded card with an inline font — for <img>/README embeds. */
   embed?: boolean;
+}
+
+/** Validate a 3- or 6-digit hex color (with or without leading #). */
+export function isHexColor(s: string): boolean {
+  return /^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s);
+}
+
+const withHash = (s: string): string => (s.startsWith("#") ? s : `#${s}`);
+
+function parseHex(hex: string): [number, number, number] | null {
+  const h = hex.replace(/^#/, "");
+  const s =
+    h.length === 3
+      ? h
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : h;
+  if (!/^[0-9a-fA-F]{6}$/.test(s)) return null;
+  return [
+    parseInt(s.slice(0, 2), 16),
+    parseInt(s.slice(2, 4), 16),
+    parseInt(s.slice(4, 6), 16),
+  ];
+}
+
+const toHex = (rgb: number[]): string =>
+  `#${rgb
+    .map((v) =>
+      Math.max(0, Math.min(255, Math.round(v)))
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+
+const mix = (a: number[], b: number[], t: number): number[] =>
+  [0, 1, 2].map((i) => a[i] + (b[i] - a[i]) * t);
+
+/** Derive a 5-step ramp (empty + levels 1–4) from a base color, over the theme bg. */
+function rampFromColor(color: string, theme: Theme): readonly string[] {
+  const c = parseHex(color);
+  const bg = parseHex(PALETTES[theme].bg);
+  if (!c || !bg) return PALETTES[theme].levels;
+  return [
+    PALETTES[theme].levels[0],
+    ...[0.4, 0.6, 0.8, 1].map((t) => toHex(mix(bg, c, t))),
+  ];
+}
+
+function resolvePalette(options: RenderOptions) {
+  const theme = options.theme ?? "dark";
+  const base = PALETTES[theme];
+  return {
+    bg: options.bg && isHexColor(options.bg) ? withHash(options.bg) : base.bg,
+    levels:
+      options.color && isHexColor(options.color)
+        ? rampFromColor(options.color, theme)
+        : base.levels,
+    muted: base.muted,
+  };
 }
 
 /**
  * Render a merged quilt as a self-contained SVG string (no DOM).
  *
- * - On the page (`embed: false`): responsive (`max-width:100%`) so the full
- *   year fits with no horizontal scroll; inherits the page font + dark theme.
- * - As an embed (`embed: true`): a padded, themed card with an inline font and
- *   its own background, so it renders correctly inside an `<img>` on any site.
+ * - On the page (`embed: false`): responsive so the full year fits, no scroll.
+ * - As an embed (`embed: true`): a padded card with its own background, inline
+ *   font, a less→more legend, and accounts linked to their GitHub profiles —
+ *   renders correctly inside an `<img>` on any site. `bg`/`color` customize it.
  */
 export function renderQuiltSvg(
   quilt: Quilt,
   options: RenderOptions = {},
 ): string {
   if (!quilt.days.length) return "";
-  const { theme = "dark", embed = false } = options;
-  const palette = PALETTES[theme];
+  const { embed = false } = options;
+  const { bg, levels, muted } = resolvePalette(options);
 
   const first = utcDate(quilt.from);
   const firstSunday = new Date(first);
@@ -59,7 +123,7 @@ export function renderQuiltSvg(
       const x = LEFT + colOf(d) * STEP;
       const y = TOP + d.getUTCDay() * STEP;
       const noun = day.count === 1 ? "contribution" : "contributions";
-      return `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="2" ry="2" fill="${palette.levels[day.level]}"><title>${day.count} ${noun} on ${day.date}</title></rect>`;
+      return `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="2" ry="2" fill="${levels[day.level]}"><title>${day.count} ${noun} on ${day.date}</title></rect>`;
     })
     .join("");
 
@@ -71,7 +135,7 @@ export function renderQuiltSvg(
     const m = weekStart.getUTCMonth();
     if (m !== prevMonth) {
       months.push(
-        `<text x="${LEFT + col * STEP}" y="${TOP - 6}" fill="${palette.muted}" font-size="10">${MONTHS[m]}</text>`,
+        `<text x="${LEFT + col * STEP}" y="${TOP - 6}" fill="${muted}" font-size="10">${MONTHS[m]}</text>`,
       );
       prevMonth = m;
     }
@@ -83,8 +147,8 @@ export function renderQuiltSvg(
     [5, "Fri"],
   ]
     .map(
-      ([row, label]) =>
-        `<text x="0" y="${TOP + (row as number) * STEP + 9}" fill="${palette.muted}" font-size="10">${label}</text>`,
+      ([row, lbl]) =>
+        `<text x="0" y="${TOP + (row as number) * STEP + 9}" fill="${muted}" font-size="10">${lbl}</text>`,
     )
     .join("");
 
@@ -98,18 +162,23 @@ export function renderQuiltSvg(
     const h = height + footerH + pad * 2;
     const font = "ui-sans-serif,-apple-system,'Segoe UI',Roboto,sans-serif";
 
-    // footer: who + how many on the left, a less->more legend on the right
+    // footer: linked accounts + total on the left, a less→more legend on the right
     const fy = height + 16;
-    const summary = `${quilt.usernames.join(" + ")} · ${quilt.total.toLocaleString("en-US")} contributions`;
+    const links = quilt.usernames
+      .map(
+        (u) =>
+          `<a href="https://github.com/${u}" target="_blank"><tspan text-decoration="underline">${u}</tspan></a>`,
+      )
+      .join("<tspan> + </tspan>");
+    const summary = `<text x="0" y="${fy + 9}" font-size="11" fill="${muted}">${links}<tspan> · ${quilt.total.toLocaleString("en-US")} contributions</tspan></text>`;
     const legendX = Math.max(0, width - 128);
-    let legend = `<text x="${legendX}" y="${fy + 9}" font-size="11" fill="${palette.muted}">less</text>`;
+    let legend = `<text x="${legendX}" y="${fy + 9}" font-size="11" fill="${muted}">less</text>`;
     for (let i = 0; i < 5; i++) {
-      legend += `<rect x="${legendX + 30 + i * 13}" y="${fy}" width="10" height="10" rx="2" fill="${palette.levels[i]}"/>`;
+      legend += `<rect x="${legendX + 30 + i * 13}" y="${fy}" width="10" height="10" rx="2" fill="${levels[i]}"/>`;
     }
-    legend += `<text x="${legendX + 99}" y="${fy + 9}" font-size="11" fill="${palette.muted}">more</text>`;
-    const footer = `<text x="0" y="${fy + 9}" font-size="11" fill="${palette.muted}">${summary}</text>${legend}`;
+    legend += `<text x="${legendX + 99}" y="${fy + 9}" font-size="11" fill="${muted}">more</text>`;
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${label}" style="font-family:${font}"><rect width="${w}" height="${h}" rx="10" fill="${palette.bg}"/><g transform="translate(${pad},${pad})">${inner}${footer}</g></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${label}" style="font-family:${font}"><rect width="${w}" height="${h}" rx="10" fill="${bg}"/><g transform="translate(${pad},${pad})">${inner}${summary}${legend}</g></svg>`;
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${label}" style="max-width:100%;height:auto;display:block;font-family:var(--font-sans,ui-sans-serif)">${inner}</svg>`;

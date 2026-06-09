@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { fetchContributions, isValidUsername } from "../../lib/contributions";
 import { mergeContributions } from "../../lib/merge";
-import { placeholderSvg, renderQuiltSvg } from "../../lib/svg";
+import { isHexColor, placeholderSvg, renderQuiltSvg } from "../../lib/svg";
 import type { AccountContributions } from "../../lib/types";
 
 export const prerender = false;
@@ -21,13 +21,18 @@ function svg(body: string, status: number, cacheControl: string): Response {
 /**
  * embeddable merged contribution quilt as a self-contained svg.
  *
- *   /u/jassuwu,torvalds.svg            -> dark, last 12 months
+ *   /u/jassuwu,torvalds.svg                          -> dark, last 12 months
  *   /u/jassuwu,torvalds.svg?theme=light&y=2024
+ *   /u/jassuwu,torvalds.svg?color=ff6ac1&bg=160e23  -> custom ramp + background
  *
  * works in github readmes (`![](url)`) and any site (`<img src>`).
  */
 export const GET: APIRoute = async ({ params, url }) => {
   const theme = url.searchParams.get("theme") === "light" ? "light" : "dark";
+  const bgParam = url.searchParams.get("bg");
+  const colorParam = url.searchParams.get("color");
+  const bg = bgParam && isHexColor(bgParam) ? bgParam : undefined;
+  const color = colorParam && isHexColor(colorParam) ? colorParam : undefined;
   const usernames = (params.users ?? "")
     .split(",")
     .map((u) => u.trim())
@@ -65,6 +70,8 @@ export const GET: APIRoute = async ({ params, url }) => {
 
   const body = renderQuiltSvg(mergeContributions(sources), {
     theme,
+    bg,
+    color,
     embed: true,
   });
   if (!body) {
