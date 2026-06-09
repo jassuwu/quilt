@@ -13,7 +13,7 @@ import Layout from "../layouts/Layout.astro";
         quilt<span class="text-stitch">.</span>
       </h1>
       <p class="text-lg text-muted">
-        Every GitHub account you have, stitched into one green grid.
+        every GitHub account you have, stitched into one quilt of green.
       </p>
     </header>
 
@@ -33,7 +33,7 @@ import Layout from "../layouts/Layout.astro";
         type="submit"
         class="rounded-lg bg-accent px-5 py-3 font-medium text-bg transition hover:brightness-110"
       >
-        Stitch →
+        stitch →
       </button>
     </form>
 
@@ -45,7 +45,7 @@ import Layout from "../layouts/Layout.astro";
     >
     </p>
 
-    <section id="quilt-result" class="hidden flex-col gap-6">
+    <section id="quilt-result" class="hidden flex-col gap-8">
       <dl id="quilt-stats" class="flex flex-wrap gap-x-10 gap-y-4"></dl>
 
       <div id="quilt-years" class="hidden flex-wrap gap-2"></div>
@@ -55,8 +55,9 @@ import Layout from "../layouts/Layout.astro";
         <div
           class="mt-3 flex items-center justify-end gap-2 text-xs text-muted"
         >
-          <span>Less</span>
+          <span>less</span>
           <span class="inline-flex items-center gap-[3px]">
+            <!-- swatches mirror src/lib/levels.ts LEVEL_HEX -->
             <span
               class="inline-block size-[11px] rounded-[2px]"
               style="background:#161b22"></span>
@@ -73,22 +74,49 @@ import Layout from "../layouts/Layout.astro";
               class="inline-block size-[11px] rounded-[2px]"
               style="background:#39d353"></span>
           </span>
-          <span>More</span>
+          <span>more</span>
         </div>
+      </div>
+
+      <div class="flex flex-col gap-3 border-t border-seam pt-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm text-muted">
+            embed your live quilt — drop it in your README or portfolio, it
+            keeps itself current.
+          </p>
+          <div id="quilt-embed-tabs" class="flex gap-1 text-xs"></div>
+        </div>
+        <div class="flex items-stretch gap-2">
+          <code
+            id="quilt-embed-code"
+            class="flex-1 overflow-x-auto whitespace-nowrap rounded-lg border border-seam bg-surface px-3 py-2.5 font-mono text-sm text-text"
+          ></code>
+          <button
+            id="quilt-embed-copy"
+            type="button"
+            class="shrink-0 rounded-lg bg-accent px-4 font-medium text-bg transition hover:brightness-110"
+          >
+            copy
+          </button>
+        </div>
+        <label class="flex w-fit items-center gap-2 text-xs text-muted">
+          <input id="quilt-embed-light" type="checkbox" class="accent-accent" />
+          light theme (for light READMEs)
+        </label>
       </div>
     </section>
 
     <footer class="mt-auto flex flex-col gap-3 pt-10 text-sm">
       <p class="text-muted">
-        <span class="font-medium text-stitch">Tip</span> — turn on <span
+        <span class="font-medium text-stitch">tip</span>: turn on <span
           class="text-text"
           >Settings → Public profile → “Include private contributions on my
           profile”</span
-        > so your private-repo work counts here too. It stays anonymized — just the
-        green squares, never the details.
+        > so your private-repo work counts here too. only the green squares show up,
+        never the details.
       </p>
       <p class="text-muted">
-        Data from <a
+        data from <a
           class="text-stitch underline-offset-2 hover:underline"
           href="https://github.com/grubersjoe/github-contributions-api"
           rel="noopener">github-contributions-api</a
