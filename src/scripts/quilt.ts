@@ -1,5 +1,6 @@
 import { ContributionsError, fetchContributions } from "../lib/contributions";
 import { mergeContributions } from "../lib/merge";
+import { parseUsernames } from "../lib/parse";
 import { renderQuiltSvg } from "../lib/svg";
 import type { AccountContributions, Quilt } from "../lib/types";
 
@@ -36,20 +37,6 @@ let activeUsernames: string[] = [];
 let activeYear: Year = "last";
 let embedFmt: EmbedFmt = "md";
 let currentQuilt: Quilt | null = null;
-
-function parseUsernames(raw: string): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const part of raw.split(/[\s,]+/)) {
-    const name = part.trim();
-    const key = name.toLowerCase();
-    if (name && !seen.has(key)) {
-      seen.add(key);
-      out.push(name);
-    }
-  }
-  return out;
-}
 
 function parseYear(raw: string | null): Year {
   if (!raw || raw === "last") return "last";
