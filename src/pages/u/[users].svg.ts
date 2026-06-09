@@ -1,5 +1,9 @@
 import type { APIRoute } from "astro";
-import { fetchContributions, isValidUsername } from "../../lib/contributions";
+import {
+  ContributionsError,
+  fetchContributions,
+  isValidUsername,
+} from "../../lib/contributions";
 import { mergeContributions } from "../../lib/merge";
 import { isHexColor, placeholderSvg, renderQuiltSvg } from "../../lib/svg";
 import type { AccountContributions } from "../../lib/types";
@@ -40,13 +44,16 @@ export const GET: APIRoute = async ({ params, url }) => {
     .slice(0, MAX_ACCOUNTS)
     .filter(isValidUsername);
 
+  // Error cards are served with 200: GitHub's camo proxy renders non-2xx
+  // responses as a broken-image glyph, so the friendly card would never show
+  // in the one place embeds live. Short max-age keeps CDNs from holding them.
   if (!usernames.length) {
     return svg(
       placeholderSvg(
         "add GitHub usernames, e.g. /u/octocat,torvalds.svg",
         theme,
       ),
-      400,
+      200,
       "public, max-age=300",
     );
   }
@@ -61,11 +68,15 @@ export const GET: APIRoute = async ({ params, url }) => {
     outcome.status === "fulfilled" ? [outcome.value] : [],
   );
   if (!sources.length) {
-    return svg(
-      placeholderSvg("couldn't load those accounts", theme),
-      502,
-      "public, max-age=60",
-    );
+    const failure = settled.find(
+      (outcome) => outcome.status === "rejected",
+    ) as PromiseRejectedResult | undefined;
+    const reason = failure?.reason;
+    const message =
+      reason instanceof ContributionsError
+        ? reason.message
+        : "couldn't load those accounts";
+    return svg(placeholderSvg(message, theme), 200, "public, max-age=60");
   }
 
   const body = renderQuiltSvg(mergeContributions(sources), {

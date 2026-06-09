@@ -37,6 +37,16 @@ export function isHexColor(s: string): boolean {
   return /^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s);
 }
 
+/** Escape a string for use in SVG text content and attribute values. */
+function escapeXml(s: string): string {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+}
+
 const withHash = (s: string): string => (s.startsWith("#") ? s : `#${s}`);
 
 function parseHex(hex: string): [number, number, number] | null {
@@ -190,5 +200,6 @@ export function placeholderSvg(message: string, theme: Theme = "dark"): string {
   const w = 480;
   const h = 96;
   const font = "ui-sans-serif,-apple-system,'Segoe UI',Roboto,sans-serif";
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${message}" style="font-family:${font}"><rect width="${w}" height="${h}" rx="10" fill="${p.bg}"/><text x="${w / 2}" y="${h / 2 + 5}" text-anchor="middle" font-size="16" fill="${p.muted}">${message}</text></svg>`;
+  const msg = escapeXml(message);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${msg}" style="font-family:${font}"><rect width="${w}" height="${h}" rx="10" fill="${p.bg}"/><text x="${w / 2}" y="${h / 2 + 5}" text-anchor="middle" font-size="16" fill="${p.muted}">${msg}</text></svg>`;
 }
