@@ -40,6 +40,8 @@ const embedCode = document.querySelector<HTMLElement>("#quilt-embed-code");
 const embedCopy =
   document.querySelector<HTMLButtonElement>("#quilt-embed-copy");
 const shareBtn = document.querySelector<HTMLButtonElement>("#quilt-share");
+const downloadBtn =
+  document.querySelector<HTMLButtonElement>("#quilt-download");
 
 let activeUsernames: string[] = [];
 let activeYear: Year = "last";
@@ -391,6 +393,47 @@ function copyWithFeedback(
 
 embedCopy?.addEventListener("click", () => {
   if (embedCopy) copyWithFeedback(embedCopy, embedSnippet(), "copy");
+});
+
+downloadBtn?.addEventListener("click", () => {
+  if (!currentQuilt || !downloadBtn) return;
+  // rasterize the embed card client-side: SVG → <img> → canvas → png.
+  // the card is self-contained (system font, no external refs), so the
+  // canvas stays untainted.
+  const svgStr = renderQuiltSvg(currentQuilt, {
+    ...embedOptions(),
+    embed: true,
+  });
+  const svgUrl = URL.createObjectURL(
+    new Blob([svgStr], { type: "image/svg+xml" }),
+  );
+  const img = new Image();
+  img.onload = () => {
+    const scale = 2; // crisp on retina and social-feed zoom
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth * scale;
+    canvas.height = img.naturalHeight * scale;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `quilt-${activeUsernames.join("-")}.png`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }, "image/png");
+    }
+    URL.revokeObjectURL(svgUrl);
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(svgUrl);
+    downloadBtn.textContent = "couldn't render";
+    setTimeout(() => (downloadBtn.textContent = "download png"), 1500);
+  };
+  img.src = svgUrl;
 });
 
 shareBtn?.addEventListener("click", () => {
