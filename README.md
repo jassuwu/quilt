@@ -29,6 +29,18 @@ distribution, and paints one GitHub-style grid. The result lives in the URL
 
 No login. Nothing stored. All fetch + merge happens in your browser.
 
+## Embed it anywhere
+
+Drop your merged graph into a README or any site with one URL — no build step, no JS:
+
+```md
+![my contributions](https://quilt.jass.gg/u/jassucyd,jassuwu.svg)
+```
+
+Add `?theme=light` for light READMEs/sites and `?y=2024` for a specific year. The SVG is
+rendered server-side and CDN-cached, so it stays fast and current — works anywhere `<img>`
+does, GitHub/GitLab READMEs included.
+
 ## The data
 
 One source: the [github-contributions-api](https://github.com/grubersjoe/github-contributions-api),
@@ -38,7 +50,7 @@ green your profile already shows (when the account has that setting on). See
 
 ## Stack
 
-- **Astro 6** + **Tailwind v4** (CSS-first), strict TypeScript, **bun** — static, deployed on **Vercel**.
+- **Astro 6** + **Tailwind v4** (CSS-first), strict TypeScript, **bun** on **Vercel** — static page + one dynamic, CDN-cached SVG embed route (`@astrojs/vercel`).
 - Pure, unit-tested merge core in `src/lib`; the grid, the OG card, and the demo share one green ramp.
 - Favicon/PWA icons + the OG share card are generated from one SVG mark via `@resvg/resvg-js`.
 - The hero/social demos are a sibling **Remotion** project in [`remotion/`](remotion/).

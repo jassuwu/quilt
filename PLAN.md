@@ -17,6 +17,7 @@ quilt/
 │   ├── scripts/quilt.ts     # browser: read usernames → fetch → merge → render SVG grid
 │   ├── layouts/Layout.astro # head, OG/Twitter, fonts
 │   ├── pages/index.astro    # the merge tool
+│   ├── pages/u/[users].svg.ts # embeddable SVG endpoint (server-rendered)
 │   └── styles/global.css    # @theme green ramp + stitch accent + fonts
 ├── scripts/                 # build-time (resvg): art.ts, build-icons.ts, build-og.ts
 ├── remotion/                # sibling project: the hero/social demos
@@ -32,10 +33,11 @@ quilt/
 - **P5 — Identity.** quilt mark → favicon/PWA set; OG share card. ✅
 - **P6 — Demo.** Remotion hero + social compositions; poster for the README. ✅
 - **P7 — Docs + CI.** CONTEXT / SOURCES / ADRs / README; CI gate. ✅
+- **P8 — Embeds.** Vercel adapter + `/u/[users].svg` (theme + year); responsive no-scroll graph + GitHub-style year selector. ✅
 
 ## Deferred to v2
 
-- Personalised per-combo share cards (needs the `@astrojs/vercel` adapter + a runtime OG route).
-- Light theme toggle (GitHub's light ramp).
+- Per-combo OG cards (can now reuse the `/u/[users].svg` route).
+- Site-wide light theme toggle (embeds already support `?theme=light`).
 - Private contributions via a per-account PAT.
-- Year selector (`?y=`) and richer streak math.
+- Interactive iframe + PNG embed variants; richer streak math.
