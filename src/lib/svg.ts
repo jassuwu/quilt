@@ -190,8 +190,13 @@ export function renderQuiltSvg(
     const domainText = " · quilt.jass.gg";
     let textLen = quilt.usernames.join(" + ").length + domainText.length;
     let extras = "";
+    // the merged cross-account streak is the one number no per-account tool
+    // can show — surface it when it means something and fits.
     for (const part of [
       ` · ${quilt.total.toLocaleString("en-US")} contributions`,
+      ...(quilt.longestStreak > 1
+        ? [` · ${quilt.longestStreak}-day streak`]
+        : []),
     ]) {
       if ((textLen + part.length) * CHAR_W > budget) break;
       extras += `<tspan>${part}</tspan>`;

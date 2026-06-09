@@ -49,4 +49,25 @@ describe("renderQuiltSvg", () => {
     expect(svg).toContain("quilt.jass.gg");
     expect(svg).toContain('href="https://quilt.jass.gg/?u=a,b"');
   });
+
+  test("embed footer shows the merged streak when it fits", () => {
+    // a year of active days → wide grid (roomy budget) + a real streak
+    const days = Array.from({ length: 365 }, (_, i) => {
+      const date = new Date(Date.UTC(2025, 0, 1 + i))
+        .toISOString()
+        .slice(0, 10);
+      return { date, count: 1, level: 1 as const };
+    });
+    const yearQuilt: Quilt = {
+      ...quilt,
+      days,
+      total: 365,
+      longestStreak: 365,
+      currentStreak: 365,
+      from: days[0].date,
+      to: days.at(-1)!.date,
+    };
+    const svg = renderQuiltSvg(yearQuilt, { embed: true });
+    expect(svg).toContain("365-day streak");
+  });
 });
