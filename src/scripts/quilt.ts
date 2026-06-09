@@ -137,8 +137,15 @@ function embedUrl(): string {
 
 function embedSnippet(): string {
   const url = embedUrl();
-  if (embedFmt === "md") return `![my quilt](${url})`;
-  if (embedFmt === "html") return `<img src="${url}" alt="my quilt" />`;
+  // camo strips links inside the SVG, so this outer link is the only
+  // clickable path from a README back to the quilt it shows.
+  const page = `${EMBED_ORIGIN}/?u=${activeUsernames.join(",")}${
+    activeYear !== "last" ? `&y=${activeYear}` : ""
+  }`;
+  const alt = `contribution quilt for ${activeUsernames.join(" + ")}`;
+  if (embedFmt === "md") return `[![${alt}](${url})](${page})`;
+  if (embedFmt === "html")
+    return `<a href="${page}"><img src="${url}" alt="${alt}" /></a>`;
   return url;
 }
 
