@@ -1,15 +1,11 @@
-/** Frame timeline for the quilt "show" (30fps). */
-export const FAN_END = 36; // sad sparse accounts have fanned in
-export const SLAM = 54; // they slam together
-export const DENSIFY_END = 82; // merged grid filled
-export const SPIN_START = 68; // slot-machine counter starts
-export const SPIN_END = 128; // ...and lands on the meme number
-export const SHAPE_START = 142; // the graph rearranges into NO LIFE
-export const SHAPE_END = 186;
-export const WORD_START = 190; // verdict wordmark + tagline
-export const HERO_DURATION = 232; // silent README hero
-export const CTA_START = 238;
-export const SOCIAL_DURATION = 312; // + CTA end card
-
-/** The number every dev secretly wants their graph to say. */
-export const MEME_TOTAL = 69420;
+/** Frame timeline for the quilt demo (30fps). */
+export const FAN_END = 36; // scattered accounts have fanned in
+export const SLAM = 54; // they merge together
+export const DENSIFY_END = 84; // merged grid fills in
+export const SPIN_START = 70; // the contribution counter counts up
+export const SPIN_END = 128; // ...and settles
+export const REVEAL_START = 140; // a green shimmer sweeps across the finished quilt
+export const WORD_START = 188; // wordmark + tagline
+export const HERO_DURATION = 228; // silent README hero
+export const CTA_START = 234;
+export const SOCIAL_DURATION = 304; // + CTA end card
