@@ -78,13 +78,25 @@ import Layout from "../layouts/Layout.astro";
       </div>
     </section>
 
-    <footer class="mt-auto pt-8 text-sm text-muted">
-      <p>
-        Public contributions (including privatized-but-visible) via the <a
+    <footer class="mt-auto flex flex-col gap-3 pt-10 text-sm">
+      <p class="text-muted">
+        <span class="font-medium text-stitch">Tip</span> — turn on <span
+          class="text-text"
+          >Settings → Public profile → “Include private contributions on my
+          profile”</span
+        > so your private-repo work counts here too. It stays anonymized — just the
+        green squares, never the details.
+      </p>
+      <p class="text-muted">
+        Data from <a
           class="text-stitch underline-offset-2 hover:underline"
           href="https://github.com/grubersjoe/github-contributions-api"
           rel="noopener">github-contributions-api</a
-        >. No login, nothing stored.
+        > · built by <a
+          class="text-stitch underline-offset-2 hover:underline"
+          href="https://github.com/jassuwu"
+          rel="noopener">jassuwu</a
+        > · not affiliated with GitHub
       </p>
     </footer>
   </main>
