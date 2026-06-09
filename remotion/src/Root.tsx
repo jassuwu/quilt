@@ -1,28 +1,28 @@
 import "./index.css";
 import { Composition } from "remotion";
 import { HERO_DURATION, SOCIAL_DURATION } from "./choreography";
-import { QuiltMerge } from "./QuiltMerge";
+import { QuiltShow } from "./QuiltShow";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Composition
         id="hero"
-        component={QuiltMerge}
+        component={QuiltShow}
         durationInFrames={HERO_DURATION}
         fps={30}
         width={1920}
         height={1080}
-        defaultProps={{ showCta: false }}
+        defaultProps={{ sound: false, showCta: false }}
       />
       <Composition
         id="social"
-        component={QuiltMerge}
+        component={QuiltShow}
         durationInFrames={SOCIAL_DURATION}
         fps={30}
         width={1920}
         height={1080}
-        defaultProps={{ showCta: true }}
+        defaultProps={{ sound: true, showCta: true }}
       />
     </>
   );

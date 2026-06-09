@@ -1,7 +1,15 @@
-/** Frame timeline for the quilt-merge demo (30fps). */
-export const GATHER_START = 46; // account cards begin converging
-export const GATHER_END = 88; // cards have stacked + faded into the merged grid
-export const FILL_START = 88; // merged grid starts densifying in reading order
-export const FILL_END = 160; // quilt fully stitched
-export const HERO_DURATION = 192; // silent README hero
-export const SOCIAL_DURATION = 260; // + CTA end card
+/** Frame timeline for the quilt "show" (30fps). */
+export const FAN_END = 36; // sad sparse accounts have fanned in
+export const SLAM = 54; // they slam together
+export const DENSIFY_END = 82; // merged grid filled
+export const SPIN_START = 68; // slot-machine counter starts
+export const SPIN_END = 128; // ...and lands on the meme number
+export const SHAPE_START = 142; // the graph rearranges into NO LIFE
+export const SHAPE_END = 186;
+export const WORD_START = 190; // verdict wordmark + tagline
+export const HERO_DURATION = 232; // silent README hero
+export const CTA_START = 238;
+export const SOCIAL_DURATION = 312; // + CTA end card
+
+/** The number every dev secretly wants their graph to say. */
+export const MEME_TOTAL = 69420;
