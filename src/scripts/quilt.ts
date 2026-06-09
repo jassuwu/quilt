@@ -1,6 +1,6 @@
 import { ContributionsError, fetchContributions } from "../lib/contributions";
 import { mergeContributions } from "../lib/merge";
-import { parseUsernames } from "../lib/parse";
+import { MAX_ACCOUNTS, parseUsernames } from "../lib/parse";
 import { renderQuiltSvg } from "../lib/svg";
 import type { AccountContributions, Quilt } from "../lib/types";
 
@@ -188,6 +188,10 @@ async function run(usernames: string[], year: Year): Promise<void> {
     setStatus("add at least one GitHub username.", true);
     return;
   }
+  // same cap as the embed route — otherwise the snippet silently disagrees
+  // with the quilt the page just showed.
+  const overflow = usernames.length - MAX_ACCOUNTS;
+  if (overflow > 0) usernames = usernames.slice(0, MAX_ACCOUNTS);
   activeUsernames = usernames;
   activeYear = year;
   updateUrl();
@@ -230,14 +234,16 @@ async function run(usernames: string[], year: Year): Promise<void> {
   result?.classList.add("flex");
   exampleRow?.classList.add("hidden");
 
-  if (errors.length) {
-    setStatus(
-      `skipped ${errors.map((e) => e.username).join(", ")} — ${errors[0].message}.`,
-      true,
+  const notes: string[] = [];
+  if (overflow > 0)
+    notes.push(
+      `quilts cap at ${MAX_ACCOUNTS} accounts — dropped the last ${overflow}`,
     );
-  } else {
-    setStatus("");
-  }
+  if (errors.length)
+    notes.push(
+      `skipped ${errors.map((e) => e.username).join(", ")} — ${errors[0].message}`,
+    );
+  setStatus(notes.join(" · "), notes.length > 0);
 }
 
 form?.addEventListener("submit", (event) => {

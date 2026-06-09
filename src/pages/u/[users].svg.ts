@@ -5,12 +5,11 @@ import {
   isValidUsername,
 } from "../../lib/contributions";
 import { mergeContributions } from "../../lib/merge";
+import { MAX_ACCOUNTS } from "../../lib/parse";
 import { isHexColor, placeholderSvg, renderQuiltSvg } from "../../lib/svg";
 import type { AccountContributions } from "../../lib/types";
 
 export const prerender = false;
-
-const MAX_ACCOUNTS = 10;
 
 function svg(body: string, status: number, cacheControl: string): Response {
   return new Response(body, {

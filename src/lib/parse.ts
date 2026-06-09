@@ -1,3 +1,6 @@
+/** Cap on accounts per quilt — every account is one fetch to the free API. */
+export const MAX_ACCOUNTS = 10;
+
 /**
  * People paste what they have — @handles, profile URLs, trailing junk.
  * Reduce a token to the bare username instead of erroring on it.
