@@ -2,6 +2,7 @@
   "name": "quilt",
   "type": "module",
   "version": "0.0.1",
+  "packageManager": "bun@1.3.14",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -9,7 +10,10 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "typecheck": "astro check",
+    "fmt": "prettier --write .",
+    "fmt:check": "prettier --check ."
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
