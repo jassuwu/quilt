@@ -109,10 +109,15 @@ export const GET: APIRoute = async ({ params, url }) => {
     );
   }
 
-  // CDN-cached: fresh ~1h, served stale up to a day while revalidating.
+  // CDN-cached: fresh ~1h, served stale up to a day while revalidating —
+  // but a partial merge (an account timed out or errored) keeps the short
+  // TTL so the next revalidation heals it instead of pinning it for hours.
+  const partial = sources.length < usernames.length;
   return svg(
     body,
     200,
-    "public, max-age=1800, s-maxage=3600, stale-while-revalidate=86400",
+    partial
+      ? "public, max-age=60"
+      : "public, max-age=1800, s-maxage=3600, stale-while-revalidate=86400",
   );
 };
