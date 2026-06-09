@@ -5,6 +5,7 @@ import {
   Audio,
   Sequence,
   interpolate,
+  interpolateColors,
   spring,
   staticFile,
   useCurrentFrame,
@@ -15,13 +16,23 @@ import {
   DENSIFY_END,
   EMBED_START,
   FAN_END,
+  GATHER_END,
   REVEAL_START,
   SLAM,
   SPIN_END,
   SPIN_START,
+  THEME_HOME,
+  THEME_STEPS,
   WORD_START,
 } from "./choreography";
-import { COLORS, hexForLevel, type Level } from "./theme";
+import {
+  COLORS,
+  DEMO_THEMES,
+  HOME_THEME,
+  hexForLevel,
+  type DemoTheme,
+  type Level,
+} from "./theme";
 
 const { fontFamily: DISPLAY } = loadDisplay("normal", { weights: ["800"], subsets: ["latin"] });
 const { fontFamily: MONO } = loadMono("normal", { weights: ["400", "700"], subsets: ["latin"] });
@@ -33,13 +44,15 @@ const GAP = 6;
 const STEP = CELL + GAP;
 const GRID_W = COLS * STEP - GAP;
 const GRID_H = ROWS * STEP - GAP;
-const TOTAL_CELLS = COLS * ROWS;
 const TOTAL = 1337; // a subtle leet nod; the grid stays a real lush sample
 
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 const ease = (x: number) => 1 - Math.pow(1 - x, 3);
+const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const shakeAt = (frame: number, at: number, mag: number) =>
-  frame >= at && frame < at + 12 ? mag * Math.sin((frame - at) * 2) * Math.exp(-(frame - at) * 0.45) : 0;
+  frame >= at && frame < at + 14 ? mag * Math.sin((frame - at) * 1.9) * Math.exp(-(frame - at) * 0.38) : 0;
+const bumpAt = (frame: number, at: number, mag: number) =>
+  frame >= at ? mag * Math.exp(-(frame - at) * 0.35) : 0;
 
 function mulberry32(seed: number) {
   return () => {
@@ -73,9 +86,19 @@ const FAN = [
   { x: 40, y: 70, rot: 5 },
   { x: 360, y: -20, rot: 10 },
 ];
+const CARD_STAGGER = 8;
 
 const ownLevel = (n: number): Level => (n <= 0 ? 0 : Math.min(4, n)) as Level;
 const mergedLevel = (n: number): Level => (n <= 0 ? 0 : n <= 2 ? 1 : n <= 5 ? 2 : n <= 9 ? 3 : 4);
+
+// radial bloom: each patch pops by its distance from the impact point
+const CENTER_C = (COLS - 1) / 2;
+const CENTER_R = (ROWS - 1) / 2;
+const radial = (r: number, c: number) => {
+  const dx = (c - CENTER_C) / CENTER_C;
+  const dy = (r - CENTER_R) / CENTER_R;
+  return Math.sqrt(dx * dx + dy * dy) / Math.SQRT2;
+};
 
 type CellStyle = { color: string; scale?: number; opacity?: number; glow?: string };
 
@@ -101,6 +124,28 @@ const CellGrid: React.FC<{ cell: (r: number, c: number) => CellStyle }> = ({ cel
   );
 };
 
+/** which theme the world is wearing at this frame, with a crossfade t. */
+function themeAt(frame: number): { from: DemoTheme; to: DemoTheme; t: number } {
+  const stops: { at: number; theme: DemoTheme }[] = [
+    ...THEME_STEPS.map((at, i) => ({ at, theme: DEMO_THEMES[i] })),
+    { at: THEME_HOME, theme: HOME_THEME },
+  ];
+  let from = HOME_THEME;
+  for (const stop of stops) {
+    if (frame >= stop.at) {
+      const t = interpolate(frame, [stop.at, stop.at + 8], [0, 1], clamp);
+      if (t < 1) {
+        return { from, to: stop.theme, t: easeInOut(t) };
+      }
+      from = stop.theme;
+    }
+  }
+  return { from, to: from, t: 1 };
+}
+
+const lerpColor = (t: number, a: string, b: string) =>
+  t >= 1 ? b : t <= 0 ? a : interpolateColors(t, [0, 1], [a, b]);
+
 export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
   sound = false,
   showCta = false,
@@ -108,64 +153,103 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const gatherT = interpolate(frame, [FAN_END, SLAM], [0, 1], clamp);
-  const mergedAppear = interpolate(frame, [SLAM - 8, SLAM + 8], [0, 1], clamp);
+  // ---- act I: scatter → converge → the held breath ----
+  const gatherT = easeInOut(interpolate(frame, [FAN_END, GATHER_END], [0, 1], clamp));
+  // the inhale: the aligned stack swells imperceptibly through the silence
+  const inhale = interpolate(frame, [GATHER_END, SLAM], [1, 1.022], clamp);
+  // the exhale: the merged quilt settles from its impact scale
+  const settle = interpolate(frame, [SLAM, SLAM + 10], [1.045, 1], clamp);
+  const stackScale = frame < SLAM ? inhale : settle;
+
+  // ---- act II: impact → count → shimmer ----
+  // the collision instantly produces the body; the bloom is brightness, not
+  // existence — the slam must never land on an empty stage
+  const mergedAppear = interpolate(frame, [SLAM - 1, SLAM + 4], [0, 1], clamp);
   const count = Math.round(TOTAL * ease(interpolate(frame, [SPIN_START, SPIN_END], [0, 1], clamp)));
   const countIn = interpolate(frame, [SPIN_START - 6, SPIN_START + 6], [0, 1], clamp);
-  const brandT = spring({ frame: frame - WORD_START, fps, config: { damping: 200 } });
-  const embedIn = interpolate(frame, [EMBED_START, EMBED_START + 22], [0, 1], clamp);
-  const cta = interpolate(frame, [CTA_START, CTA_START + 26], [0, 1], clamp);
-
-  const shakeX = shakeAt(frame, SLAM, 5);
-  const shakeY = shakeAt(frame, SLAM, 3);
-
-  // green shimmer sweeping across the finished quilt
+  const countPop = 1 + bumpAt(frame, SPIN_END, 0.06);
   const wavePos = interpolate(frame, [REVEAL_START, REVEAL_START + 30], [-5, COLS + 5], clamp);
-  // once the embed snippet is up, the quilt cycles hue — "your colors"
-  const hue = interpolate(frame, [EMBED_START + 26, EMBED_START + 92], [0, 330], clamp);
+
+  // ---- act III: wordmark → embed → the world re-colors ----
+  const brandT = spring({ frame: frame - WORD_START, fps, config: { damping: 200 } });
+  const stitchT = spring({ frame: frame - WORD_START - 8, fps, config: { damping: 30, stiffness: 90 } });
+  const embedIn = interpolate(frame, [EMBED_START, EMBED_START + 22], [0, 1], clamp);
+  const ctaT = spring({ frame: frame - CTA_START, fps, config: { damping: 13, stiffness: 150 } });
+
+  const { from: themeFrom, to: themeTo, t: themeT } = themeAt(frame);
+  const bg = lerpColor(themeT, themeFrom.bg, themeTo.bg);
+  const surface = lerpColor(themeT, themeFrom.surface, themeTo.surface);
+  const themePulse =
+    [...THEME_STEPS, THEME_HOME].reduce((s, at) => s + bumpAt(frame, at, 0.014), 0);
+
+  // impact dressing: shake, a dim flash, a shockwave ring
+  const shakeX = shakeAt(frame, SLAM, 6);
+  const shakeY = shakeAt(frame, SLAM, 4);
+  const flash = frame >= SLAM ? 0.06 * Math.exp(-(frame - SLAM) * 0.55) : 0;
+  const ringT = interpolate(frame, [SLAM, SLAM + 20], [0, 1], clamp);
 
   const mergedCell = (r: number, c: number): CellStyle => {
-    const idx = c * ROWS + r;
-    const popStart = SLAM + (idx / TOTAL_CELLS) * (DENSIFY_END - SLAM) * 0.8;
+    const popStart = SLAM + radial(r, c) * (DENSIFY_END - SLAM) * 0.85;
     const pop = interpolate(frame, [popStart, popStart + 8], [0, 1], clamp);
     const level = mergedLevel(MERGED[r][c]);
     const dist = wavePos - c;
     const bump = frame >= REVEAL_START ? Math.exp(-(dist * dist) / 6) : 0;
     return {
-      color: hexForLevel(level),
-      opacity: mergedAppear * pop,
-      scale: 0.45 + 0.55 * pop + 0.22 * bump,
+      color: lerpColor(themeT, themeFrom.levels[level], themeTo.levels[level]),
+      opacity: mergedAppear * (0.35 + 0.65 * pop),
+      scale: 0.72 + 0.28 * pop + 0.22 * bump,
       glow: bump > 0.25 && level >= 2 ? `0 0 ${bump * 10}px rgba(57,211,83,${0.55 * bump})` : "none",
     };
   };
 
+  const themeName = themeT < 0.5 ? themeFrom.name : themeTo.name;
+  const themeAccent = themeT < 0.5 ? themeFrom.color : themeTo.color;
+
   return (
-    <AbsoluteFill style={{ backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: DISPLAY }}>
+    <AbsoluteFill style={{ backgroundColor: bg, color: COLORS.text, fontFamily: DISPLAY }}>
       {sound && (
         <>
-          {[0, 8, 16].map((f) => (
-            <Sequence key={f} from={f}>
-              <Audio src={staticFile("sfx/place.wav")} volume={0.3} />
+          {/* act I — three notes of a broken chord, one per card (panned L/C/R) */}
+          <Sequence>
+            <Audio src={staticFile("sfx/bed.wav")} volume={0.55} />
+          </Sequence>
+          {[1, 2, 3].map((n) => (
+            <Sequence key={n} from={(n - 1) * CARD_STAGGER}>
+              <Audio src={staticFile(`sfx/pluck${n}.wav`)} volume={0.4} />
             </Sequence>
           ))}
+          {/* the riser dies into five frames of silence — then the slam */}
           <Sequence from={FAN_END}>
-            <Audio src={staticFile("sfx/place.wav")} volume={0.5} />
+            <Audio src={staticFile("sfx/riser.wav")} volume={0.55} />
           </Sequence>
+          <Sequence from={SLAM}>
+            <Audio src={staticFile("sfx/slam.wav")} volume={0.95} />
+          </Sequence>
+          {/* act II — the wind-up and the ding at the top */}
           <Sequence from={SPIN_START}>
-            <Audio src={staticFile("sfx/roll.wav")} volume={0.4} />
+            <Audio src={staticFile("sfx/roll.wav")} volume={0.55} />
           </Sequence>
           <Sequence from={SPIN_END}>
-            <Audio src={staticFile("sfx/land.wav")} volume={0.6} />
+            <Audio src={staticFile("sfx/ding.wav")} volume={0.7} />
           </Sequence>
           <Sequence from={REVEAL_START}>
             <Audio src={staticFile("sfx/sweep.wav")} volume={0.5} />
           </Sequence>
-          <Sequence from={EMBED_START}>
-            <Audio src={staticFile("sfx/place.wav")} volume={0.3} />
+          {/* act III — wordmark chord, snippet, theme steps walking home */}
+          <Sequence from={WORD_START}>
+            <Audio src={staticFile("sfx/word.wav")} volume={0.45} />
           </Sequence>
+          <Sequence from={EMBED_START}>
+            <Audio src={staticFile("sfx/pluck2.wav")} volume={0.28} />
+          </Sequence>
+          {[...THEME_STEPS, THEME_HOME].map((at, i) => (
+            <Sequence key={at} from={at}>
+              <Audio src={staticFile(`sfx/step${i + 1}.wav`)} volume={0.34} />
+            </Sequence>
+          ))}
           {showCta && (
             <Sequence from={CTA_START}>
-              <Audio src={staticFile("sfx/resolve.wav")} volume={0.55} />
+              <Audio src={staticFile("sfx/resolve.wav")} volume={0.62} />
             </Sequence>
           )}
         </>
@@ -173,8 +257,8 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
 
       <AbsoluteFill style={{ transform: `translate(${shakeX}px, ${shakeY}px)` }}>
         {/* top zone: number → wordmark */}
-        <div style={{ position: "absolute", top: 108, left: 0, right: 0, textAlign: "center", opacity: countIn * (1 - brandT) }}>
-          <div style={{ fontFamily: MONO, fontSize: 112, fontWeight: 700, letterSpacing: -3, fontVariantNumeric: "tabular-nums" }}>
+        <div style={{ position: "absolute", top: 108, left: 0, right: 0, textAlign: "center", opacity: countIn * interpolate(frame, [WORD_START - 6, WORD_START + 6], [1, 0], clamp) }}>
+          <div style={{ fontFamily: MONO, fontSize: 112, fontWeight: 700, letterSpacing: -3, fontVariantNumeric: "tabular-nums", transform: `scale(${countPop})` }}>
             {count.toLocaleString("en-US")}
           </div>
           <div style={{ fontSize: 26, color: COLORS.muted, marginTop: 4 }}>contributions</div>
@@ -183,32 +267,61 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
           <div style={{ fontSize: 84, fontWeight: 800, letterSpacing: -2 }}>
             quilt<span style={{ color: COLORS.stitch }}>.</span>
           </div>
+          {/* the seam sews itself under the wordmark */}
+          <div style={{ width: 168, margin: "10px auto 0", height: 3 }}>
+            <div
+              style={{
+                width: `${Math.max(0, Math.min(1, stitchT)) * 100}%`,
+                borderTop: `3px dashed ${COLORS.stitch}`,
+                opacity: 0.85,
+              }}
+            />
+          </div>
         </div>
 
         {/* center: the quilt */}
         <div style={{ position: "absolute", top: 360, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-          <div style={{ position: "relative", width: GRID_W, height: GRID_H }}>
+          <div style={{ position: "relative", width: GRID_W, height: GRID_H, transform: `scale(${stackScale + themePulse})` }}>
             {ACCOUNTS.map((acc, i) => {
-              const appear = interpolate(frame, [i * 6, i * 6 + 18], [0, 1], clamp);
-              const fade = interpolate(frame, [SLAM - 10, SLAM], [1, 0], clamp);
+              const appear = interpolate(frame, [i * CARD_STAGGER, i * CARD_STAGGER + 20], [0, 1], clamp);
+              // the cards die in the flash, not before it
+              const fade = interpolate(frame, [SLAM, SLAM + 4], [1, 0], clamp);
               const x = FAN[i].x * (1 - gatherT);
               const y = FAN[i].y * (1 - gatherT) + (1 - appear) * 60;
               const rot = FAN[i].rot * (1 - gatherT);
+              const cardScale = 0.96 + 0.04 * appear;
               return (
                 <div
                   key={acc.label}
-                  style={{ position: "absolute", inset: 0, opacity: appear * fade, transform: `translate(${x}px, ${y}px) rotate(${rot}deg)`, transformOrigin: "center" }}
+                  style={{ position: "absolute", inset: 0, opacity: appear * fade, transform: `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${cardScale})`, transformOrigin: "center" }}
                 >
-                  <div style={{ position: "absolute", top: -44, left: 0, fontFamily: MONO, fontSize: 22, color: COLORS.muted }}>
+                  <div style={{ position: "absolute", top: -44, left: 0, fontFamily: MONO, fontSize: 22, color: COLORS.muted, opacity: 1 - gatherT }}>
                     {acc.label}
                   </div>
                   <CellGrid cell={(r, c) => ({ color: hexForLevel(ownLevel(acc.data[r][c])) })} />
                 </div>
               );
             })}
-            <div style={{ position: "absolute", inset: 0, filter: `hue-rotate(${hue}deg)` }}>
+            <div style={{ position: "absolute", inset: 0 }}>
               <CellGrid cell={mergedCell} />
             </div>
+            {/* shockwave ring from the impact */}
+            {ringT > 0 && ringT < 1 && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  top: "50%",
+                  width: 560,
+                  height: 280,
+                  marginLeft: -280,
+                  marginTop: -140,
+                  borderRadius: "50%",
+                  border: `2px solid rgba(57,211,83,${0.55 * (1 - ringT)})`,
+                  transform: `scale(${0.25 + ringT * 2.4})`,
+                }}
+              />
+            )}
           </div>
         </div>
 
@@ -220,21 +333,27 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
           <div style={{ fontFamily: MONO, fontSize: 22, color: COLORS.muted, marginBottom: 14 }}>
             embed it anywhere, in your colors
           </div>
-          <div style={{ display: "inline-block", padding: "16px 24px", borderRadius: 14, background: COLORS.surface, border: `1px solid ${COLORS.seam}`, fontFamily: MONO, fontSize: 28, color: COLORS.text }}>
+          <div style={{ display: "inline-block", padding: "16px 24px", borderRadius: 14, background: surface, border: `1px solid rgba(255,255,255,0.08)`, fontFamily: MONO, fontSize: 28, color: COLORS.text }}>
             {"![my quilt]("}
             <span style={{ color: COLORS.stitch }}>quilt.jass.gg/u/you.svg</span>
+            <span style={{ color: themeAccent }}>{themeName ? `?theme=${themeName}` : ""}</span>
             {")"}
           </div>
         </div>
 
         {showCta && (
-          <div style={{ position: "absolute", top: 820, left: 0, right: 0, textAlign: "center", opacity: cta, transform: `translateY(${(1 - cta) * 14}px)` }}>
+          <div style={{ position: "absolute", top: 820, left: 0, right: 0, textAlign: "center", opacity: Math.min(1, ctaT * 1.4), transform: `scale(${0.9 + 0.1 * ctaT})` }}>
             <span style={{ display: "inline-block", padding: "14px 28px", borderRadius: 999, background: COLORS.stitch, color: COLORS.bg, fontFamily: MONO, fontSize: 26, fontWeight: 700 }}>
               stitch yours · quilt.jass.gg
             </span>
           </div>
         )}
       </AbsoluteFill>
+
+      {/* impact flash — a single dim frame of light */}
+      {flash > 0.004 && (
+        <AbsoluteFill style={{ backgroundColor: `rgba(230,237,243,${flash})`, pointerEvents: "none" }} />
+      )}
     </AbsoluteFill>
   );
 };
