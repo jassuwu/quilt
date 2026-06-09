@@ -12,6 +12,9 @@ const DEFAULT_COLOR = "#39d353";
 const DEFAULT_BG = "#0d1117";
 
 const form = document.querySelector<HTMLFormElement>("#quilt-form");
+const submit = document.querySelector<HTMLButtonElement>(
+  "#quilt-form button[type='submit']",
+);
 const input = document.querySelector<HTMLInputElement>("#quilt-input");
 const exampleRow = document.querySelector<HTMLElement>("#quilt-example-row");
 const example = document.querySelector<HTMLAnchorElement>("#quilt-example");
@@ -37,6 +40,8 @@ let activeUsernames: string[] = [];
 let activeYear: Year = "last";
 let embedFmt: EmbedFmt = "md";
 let currentQuilt: Quilt | null = null;
+// supersession counter — the last-started run owns the DOM
+let runSeq = 0;
 
 function parseYear(raw: string | null): Year {
   if (!raw || raw === "last") return "last";
@@ -200,9 +205,23 @@ async function run(usernames: string[], year: Year): Promise<void> {
     `stitching ${usernames.length} account${usernames.length === 1 ? "" : "s"}…`,
   );
 
+  const seq = ++runSeq;
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent = "stitching…";
+  }
+
   const settled = await Promise.allSettled(
     usernames.map((u) => fetchContributions(u, { year })),
   );
+
+  // a newer run started while we were fetching — its results own the DOM
+  if (seq !== runSeq) return;
+  if (submit) {
+    submit.disabled = false;
+    submit.textContent = "stitch →";
+  }
+
   const sources: AccountContributions[] = [];
   const errors: { username: string; message: string }[] = [];
   settled.forEach((outcome, i) => {
