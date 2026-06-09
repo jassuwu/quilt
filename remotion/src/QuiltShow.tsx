@@ -34,13 +34,12 @@ const STEP = CELL + GAP;
 const GRID_W = COLS * STEP - GAP;
 const GRID_H = ROWS * STEP - GAP;
 const TOTAL_CELLS = COLS * ROWS;
+const TOTAL = 1337; // a subtle leet nod; the grid stays a real lush sample
 
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 const ease = (x: number) => 1 - Math.pow(1 - x, 3);
 const shakeAt = (frame: number, at: number, mag: number) =>
-  frame >= at && frame < at + 12 ? mag * Math.sin((frame - at) * 2.1) * Math.exp(-(frame - at) * 0.4) : 0;
-const flashAt = (frame: number, at: number) =>
-  frame >= at && frame < at + 7 ? 0.28 * Math.exp(-(frame - at) * 0.9) : 0;
+  frame >= at && frame < at + 12 ? mag * Math.sin((frame - at) * 2) * Math.exp(-(frame - at) * 0.45) : 0;
 
 function mulberry32(seed: number) {
   return () => {
@@ -69,9 +68,6 @@ const ACCOUNTS = [
 const MERGED: number[][] = Array.from({ length: ROWS }, (_, r) =>
   Array.from({ length: COLS }, (_, c) => ACCOUNTS.reduce((s, a) => s + a.data[r][c], 0)),
 );
-// a subtle leet nod; the grid below stays a real lush sample.
-const TOTAL = 1337;
-
 const FAN = [
   { x: -380, y: -70, rot: -8 },
   { x: 40, y: 70, rot: 5 },
@@ -114,18 +110,19 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
 
   const gatherT = interpolate(frame, [FAN_END, SLAM], [0, 1], clamp);
   const mergedAppear = interpolate(frame, [SLAM - 8, SLAM + 8], [0, 1], clamp);
-  const counter = Math.round(TOTAL * ease(interpolate(frame, [SPIN_START, SPIN_END], [0, 1], clamp)));
-  const counterOpacity = interpolate(frame, [SPIN_START - 6, SPIN_START + 6], [0, 1], clamp);
-  const wm = spring({ frame: frame - WORD_START, fps, config: { damping: 200 } });
-  const cta = interpolate(frame, [CTA_START, CTA_START + 26], [0, 1], clamp);
+  const count = Math.round(TOTAL * ease(interpolate(frame, [SPIN_START, SPIN_END], [0, 1], clamp)));
+  const countIn = interpolate(frame, [SPIN_START - 6, SPIN_START + 6], [0, 1], clamp);
+  const brandT = spring({ frame: frame - WORD_START, fps, config: { damping: 200 } });
   const embedIn = interpolate(frame, [EMBED_START, EMBED_START + 22], [0, 1], clamp);
+  const cta = interpolate(frame, [CTA_START, CTA_START + 26], [0, 1], clamp);
 
-  const shakeX = shakeAt(frame, SLAM, 8) + shakeAt(frame, REVEAL_START, 6);
-  const shakeY = shakeAt(frame, SLAM, 4) + shakeAt(frame, REVEAL_START, 4);
-  const flash = flashAt(frame, REVEAL_START);
+  const shakeX = shakeAt(frame, SLAM, 5);
+  const shakeY = shakeAt(frame, SLAM, 3);
 
-  // green shimmer wave sweeping across the finished quilt
-  const wavePos = interpolate(frame, [REVEAL_START, REVEAL_START + 34], [-5, COLS + 5], clamp);
+  // green shimmer sweeping across the finished quilt
+  const wavePos = interpolate(frame, [REVEAL_START, REVEAL_START + 30], [-5, COLS + 5], clamp);
+  // once the embed snippet is up, the quilt cycles hue — "your colors"
+  const hue = interpolate(frame, [EMBED_START + 26, EMBED_START + 92], [0, 330], clamp);
 
   const mergedCell = (r: number, c: number): CellStyle => {
     const idx = c * ROWS + r;
@@ -137,8 +134,8 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
     return {
       color: hexForLevel(level),
       opacity: mergedAppear * pop,
-      scale: 0.45 + 0.55 * pop + 0.26 * bump,
-      glow: bump > 0.25 && level >= 2 ? `0 0 ${bump * 10}px rgba(57,211,83,${0.6 * bump})` : "none",
+      scale: 0.45 + 0.55 * pop + 0.22 * bump,
+      glow: bump > 0.25 && level >= 2 ? `0 0 ${bump * 10}px rgba(57,211,83,${0.55 * bump})` : "none",
     };
   };
 
@@ -148,46 +145,48 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
         <>
           {[0, 8, 16].map((f) => (
             <Sequence key={f} from={f}>
-              <Audio src={staticFile("sfx/whoosh.wav")} volume={0.35} />
+              <Audio src={staticFile("sfx/place.wav")} volume={0.3} />
             </Sequence>
           ))}
           <Sequence from={FAN_END}>
-            <Audio src={staticFile("sfx/whoosh.wav")} volume={0.55} />
+            <Audio src={staticFile("sfx/place.wav")} volume={0.5} />
           </Sequence>
           <Sequence from={SPIN_START}>
-            <Audio src={staticFile("sfx/spin.wav")} volume={0.5} />
+            <Audio src={staticFile("sfx/roll.wav")} volume={0.4} />
           </Sequence>
           <Sequence from={SPIN_END}>
-            <Audio src={staticFile("sfx/ding.wav")} volume={0.75} />
+            <Audio src={staticFile("sfx/land.wav")} volume={0.6} />
           </Sequence>
           <Sequence from={REVEAL_START}>
-            <Audio src={staticFile("sfx/boom.wav")} volume={0.5} />
-          </Sequence>
-          <Sequence from={REVEAL_START + 8}>
-            <Audio src={staticFile("sfx/sparkle.wav")} volume={0.4} />
+            <Audio src={staticFile("sfx/sweep.wav")} volume={0.5} />
           </Sequence>
           <Sequence from={EMBED_START}>
-            <Audio src={staticFile("sfx/ding.wav")} volume={0.4} />
+            <Audio src={staticFile("sfx/place.wav")} volume={0.3} />
           </Sequence>
           {showCta && (
             <Sequence from={CTA_START}>
-              <Audio src={staticFile("sfx/tada.wav")} volume={0.55} />
+              <Audio src={staticFile("sfx/resolve.wav")} volume={0.55} />
             </Sequence>
           )}
         </>
       )}
 
       <AbsoluteFill style={{ transform: `translate(${shakeX}px, ${shakeY}px)` }}>
-        <div style={{ position: "absolute", top: 124, left: 0, right: 0, textAlign: "center", opacity: counterOpacity }}>
+        {/* top zone: number → wordmark */}
+        <div style={{ position: "absolute", top: 108, left: 0, right: 0, textAlign: "center", opacity: countIn * (1 - brandT) }}>
           <div style={{ fontFamily: MONO, fontSize: 112, fontWeight: 700, letterSpacing: -3, fontVariantNumeric: "tabular-nums" }}>
-            {counter.toLocaleString("en-US")}
+            {count.toLocaleString("en-US")}
           </div>
-          <div style={{ fontSize: 26, color: COLORS.muted, marginTop: 4 }}>
-            contributions
+          <div style={{ fontSize: 26, color: COLORS.muted, marginTop: 4 }}>contributions</div>
+        </div>
+        <div style={{ position: "absolute", top: 132, left: 0, right: 0, textAlign: "center", opacity: brandT, transform: `translateY(${(1 - brandT) * 14}px)` }}>
+          <div style={{ fontSize: 84, fontWeight: 800, letterSpacing: -2 }}>
+            quilt<span style={{ color: COLORS.stitch }}>.</span>
           </div>
         </div>
 
-        <div style={{ position: "absolute", top: 382, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
+        {/* center: the quilt */}
+        <div style={{ position: "absolute", top: 360, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
           <div style={{ position: "relative", width: GRID_W, height: GRID_H }}>
             {ACCOUNTS.map((acc, i) => {
               const appear = interpolate(frame, [i * 6, i * 6 + 18], [0, 1], clamp);
@@ -207,33 +206,21 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
                 </div>
               );
             })}
-            <div style={{ position: "absolute", inset: 0 }}>
+            <div style={{ position: "absolute", inset: 0, filter: `hue-rotate(${hue}deg)` }}>
               <CellGrid cell={mergedCell} />
             </div>
           </div>
         </div>
 
-        <div style={{ position: "absolute", top: 620, left: 0, right: 0, textAlign: "center", opacity: wm, transform: `translateY(${(1 - wm) * 16}px)` }}>
-          <div style={{ fontSize: 92, fontWeight: 800, letterSpacing: -2 }}>
-            quilt<span style={{ color: COLORS.stitch }}>.</span>
-          </div>
-        </div>
-
-        {/* tagline → embed snippet crossfade */}
-        <div
-          style={{ position: "absolute", top: 742, left: 0, right: 0, textAlign: "center", opacity: wm * (1 - embedIn), fontFamily: MONO, fontSize: 26, color: COLORS.muted }}
-        >
+        {/* below zone: tagline → embed snippet */}
+        <div style={{ position: "absolute", top: 648, left: 0, right: 0, textAlign: "center", opacity: brandT * (1 - embedIn), fontFamily: MONO, fontSize: 26, color: COLORS.muted }}>
           every account, one quilt.
         </div>
-        <div
-          style={{ position: "absolute", top: 728, left: 0, right: 0, textAlign: "center", opacity: embedIn, transform: `translateY(${(1 - embedIn) * 12}px)` }}
-        >
+        <div style={{ position: "absolute", top: 624, left: 0, right: 0, textAlign: "center", opacity: embedIn, transform: `translateY(${(1 - embedIn) * 12}px)` }}>
           <div style={{ fontFamily: MONO, fontSize: 22, color: COLORS.muted, marginBottom: 14 }}>
-            embed it anywhere — readme, portfolio, docs
+            embed it anywhere, in your colors
           </div>
-          <div
-            style={{ display: "inline-block", padding: "16px 24px", borderRadius: 14, background: COLORS.surface, border: `1px solid ${COLORS.seam}`, fontFamily: MONO, fontSize: 28, color: COLORS.text }}
-          >
+          <div style={{ display: "inline-block", padding: "16px 24px", borderRadius: 14, background: COLORS.surface, border: `1px solid ${COLORS.seam}`, fontFamily: MONO, fontSize: 28, color: COLORS.text }}>
             {"![my quilt]("}
             <span style={{ color: COLORS.stitch }}>quilt.jass.gg/u/you.svg</span>
             {")"}
@@ -241,14 +228,12 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
         </div>
 
         {showCta && (
-          <div style={{ position: "absolute", top: 884, left: 0, right: 0, textAlign: "center", opacity: cta, transform: `translateY(${(1 - cta) * 14}px)` }}>
+          <div style={{ position: "absolute", top: 820, left: 0, right: 0, textAlign: "center", opacity: cta, transform: `translateY(${(1 - cta) * 14}px)` }}>
             <span style={{ display: "inline-block", padding: "14px 28px", borderRadius: 999, background: COLORS.stitch, color: COLORS.bg, fontFamily: MONO, fontSize: 26, fontWeight: 700 }}>
               stitch yours · quilt.jass.gg
             </span>
           </div>
         )}
-
-        <AbsoluteFill style={{ backgroundColor: "#ffffff", opacity: flash, pointerEvents: "none" }} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
