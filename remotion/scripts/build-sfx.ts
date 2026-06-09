@@ -1,11 +1,20 @@
-// Procedurally synthesizes the demo's sound effects to WAV — no audio assets.
-// Design: creamy + muffled, each cue motivated by what's on screen —
-//   place  : soft thud as a card drops in (and the merge slam)
-//   roll   : a decelerating tick-roll while the number counts up
-//   land   : a soft rounded settle when it stops
-//   sweep  : a swept swell that tracks the green shimmer
-//   resolve: a warm low chord for the CTA
-// Heavy low-pass + soft attacks; nothing bright or clicky. Run with `bun run sfx`.
+// Procedurally synthesizes the demo's score to stereo WAV — no audio assets.
+//
+// One key (A minor pentatonic), three acts, every cue motivated by picture:
+//   bed     : a sub drone under act I that ducks into silence — the held breath
+//   pluck1-3: A3/C4/E4, one per card — a broken chord, deliberately incomplete,
+//             panned to each card's screen position (L / C / R)
+//   riser   : noise + gliss that tightens through the converge and dies early
+//   slam    : the impact — pitch-dropping sub + low fifth (A1+E2) + soft thump
+//   roll    : count-up ticks decelerating while climbing the pentatonic ladder
+//   ding    : A4+E5 at the top — the brightest note in the film, the chord whole
+//   sweep   : stereo L→R airy swell tracking the green shimmer
+//   word    : Am(add9) pluck-chord under the wordmark
+//   step1-4 : theme switches — D4, E4, G4, then home to the tonic A3
+//   resolve : the CTA cadence — A major (Picardy third: minor film, major ending)
+//
+// Heavy low-pass + soft attacks throughout; nothing bright or clicky except
+// the ding, which is allowed to shine. Run with `bun run sfx`.
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,6 +22,21 @@ import { fileURLToPath } from "node:url";
 const SR = 44100;
 const TAU = Math.PI * 2;
 const secs = (t: number) => Math.floor(SR * t);
+
+// A minor pentatonic anchors
+const A1 = 55;
+const E2 = 82.41;
+const A2 = 110;
+const E3 = 164.81;
+const A3 = 220;
+const C4 = 261.63;
+const CS4 = 277.18; // the Picardy third
+const D4 = 293.66;
+const E4 = 329.63;
+const G4 = 392.0;
+const A4 = 440;
+const B4 = 493.88;
+const E5 = 659.26;
 
 function mulberry32(seed: number) {
   return () => {
@@ -23,42 +47,56 @@ function mulberry32(seed: number) {
   };
 }
 
-function toWav(samples: Float32Array): Buffer {
-  const n = samples.length;
-  const out = Buffer.alloc(44 + n * 2);
+type Stereo = { l: Float32Array; r: Float32Array };
+const stereo = (durSec: number): Stereo => ({ l: new Float32Array(secs(durSec)), r: new Float32Array(secs(durSec)) });
+
+function toWav({ l, r }: Stereo): Buffer {
+  const n = l.length;
+  const out = Buffer.alloc(44 + n * 4);
   out.write("RIFF", 0);
-  out.writeUInt32LE(36 + n * 2, 4);
+  out.writeUInt32LE(36 + n * 4, 4);
   out.write("WAVE", 8);
   out.write("fmt ", 12);
   out.writeUInt32LE(16, 16);
   out.writeUInt16LE(1, 20);
-  out.writeUInt16LE(1, 22);
+  out.writeUInt16LE(2, 22); // stereo
   out.writeUInt32LE(SR, 24);
-  out.writeUInt32LE(SR * 2, 28);
-  out.writeUInt16LE(2, 32);
+  out.writeUInt32LE(SR * 4, 28);
+  out.writeUInt16LE(4, 32);
   out.writeUInt16LE(16, 34);
   out.write("data", 36);
-  out.writeUInt32LE(n * 2, 40);
-  for (let i = 0; i < n; i++) out.writeInt16LE((Math.tanh(samples[i]) * 32767) | 0, 44 + i * 2);
+  out.writeUInt32LE(n * 4, 40);
+  for (let i = 0; i < n; i++) {
+    out.writeInt16LE((Math.tanh(l[i]) * 32767) | 0, 44 + i * 4);
+    out.writeInt16LE((Math.tanh(r[i]) * 32767) | 0, 46 + i * 4);
+  }
   return out;
 }
 
-const buf = (durSec: number) => new Float32Array(secs(durSec));
-
-function mix(dest: Float32Array, src: Float32Array, atSec: number): void {
+/** mix a mono source into a stereo bus at a pan position (-1 L … +1 R). */
+function mixPan(dest: Stereo, src: Float32Array, atSec: number, pan = 0): void {
   const off = secs(atSec);
+  const th = ((pan + 1) * Math.PI) / 4; // equal-power
+  const gl = Math.cos(th);
+  const gr = Math.sin(th);
   for (let i = 0; i < src.length; i++) {
     const j = off + i;
-    if (j >= 0 && j < dest.length) dest[j] += src[i];
+    if (j >= 0 && j < dest.l.length) {
+      dest.l[j] += src[i] * gl;
+      dest.r[j] += src[i] * gr;
+    }
   }
 }
 
 /** one-pole low-pass for the muffled/creamy character (lower coef = darker). */
-function muffle(s: Float32Array, coef: number): Float32Array {
-  let lp = 0;
-  for (let i = 0; i < s.length; i++) {
-    lp += (s[i] - lp) * coef;
-    s[i] = lp;
+function muffle(s: Stereo, coef: number): Stereo {
+  let ll = 0;
+  let lr = 0;
+  for (let i = 0; i < s.l.length; i++) {
+    ll += (s.l[i] - ll) * coef;
+    lr += (s.r[i] - lr) * coef;
+    s.l[i] = ll;
+    s.r[i] = lr;
   }
   return s;
 }
@@ -69,10 +107,15 @@ interface NoteOpts {
   decay?: number;
   partials?: [number, number][];
 }
+/** kalimba-ish pluck: a few soft partials, fast-but-soft attack, exp decay. */
 function note(freq: number, durSec: number, opts: NoteOpts = {}): Float32Array {
-  const { gain = 0.3, attack = 0.012, decay = durSec * 0.5 } = opts;
-  const partials = opts.partials ?? [[1, 1], [2, 0.16]];
-  const out = buf(durSec);
+  const { gain = 0.3, attack = 0.005, decay = durSec * 0.4 } = opts;
+  const partials = opts.partials ?? [
+    [1, 1],
+    [2, 0.22],
+    [3, 0.07],
+  ];
+  const out = new Float32Array(secs(durSec));
   for (let i = 0; i < out.length; i++) {
     const t = i / SR;
     const env = Math.min(1, t / attack) * Math.exp(-t / decay);
@@ -83,81 +126,189 @@ function note(freq: number, durSec: number, opts: NoteOpts = {}): Float32Array {
   return out;
 }
 
-// soft muffled thud — a card dropping in / the merge slam
-function place(): Float32Array {
-  const out = buf(0.22);
-  for (let i = 0; i < out.length; i++) {
+// ---- act I ----
+
+// sub drone that swells under the scatter, then ducks to dead silence
+// ~170ms before the slam lands at 2.0s (frame 60 @ 30fps) — the held breath.
+function bed(): Stereo {
+  const out = stereo(2.0);
+  for (let i = 0; i < out.l.length; i++) {
     const t = i / SR;
-    const env = Math.min(1, t / 0.014) * Math.exp(-t / 0.09);
-    out[i] = Math.sin(TAU * 150 * t) * env * 0.5;
+    const swell = Math.min(1, t / 1.1) * 0.16;
+    const duck = t < 1.6 ? 1 : Math.max(0, 1 - (t - 1.6) / 0.23);
+    const s = (Math.sin(TAU * A1 * t) + 0.5 * Math.sin(TAU * A2 * 1.003 * t)) * swell * duck;
+    out.l[i] = s;
+    out.r[i] = s;
   }
-  return muffle(out, 0.35);
+  return muffle(out, 0.08);
 }
 
-// decelerating tick-roll for the count-up — dense early, sparse as it lands
-function roll(): Float32Array {
-  const dur = 1.7;
-  const out = buf(dur);
-  const n = 28;
-  for (let k = 0; k < n; k++) {
-    const y = (k + 1) / n;
-    const at = dur * (1 - Math.pow(1 - y, 1 / 3));
-    const blip = buf(0.045);
-    for (let i = 0; i < blip.length; i++) {
-      const bt = i / SR;
-      blip[i] = Math.sin(TAU * 140 * bt) * Math.min(1, bt / 0.003) * Math.exp(-bt / 0.018) * 0.4;
-    }
-    mix(out, blip, at);
+function pluck(freq: number, pan: number): Stereo {
+  const out = stereo(0.9);
+  mixPan(out, note(freq, 0.85, { gain: 0.5, decay: 0.32 }), 0, pan);
+  return muffle(out, 0.3);
+}
+
+// noise + gliss tightening through the converge; dies into baked-in silence
+// so placing it at FAN_END leaves the gap before the slam.
+function riser(): Stereo {
+  const active = 0.78;
+  const out = stereo(0.95);
+  const rngL = mulberry32(11);
+  const rngR = mulberry32(29);
+  let nl = 0;
+  let nr = 0;
+  for (let i = 0; i < secs(active); i++) {
+    const t = i / SR;
+    const tn = t / active;
+    const rise = Math.pow(tn, 1.7);
+    const release = tn > 0.94 ? (1 - tn) / 0.06 : 1; // fast exhale at the top
+    const coef = 0.03 + 0.17 * tn;
+    nl += (rngL() * 2 - 1 - nl) * coef;
+    nr += (rngR() * 2 - 1 - nr) * coef;
+    const gliss = Math.sin(TAU * A2 * Math.pow(2, tn) * t) * 0.22;
+    out.l[i] = (nl * 0.5 + gliss) * rise * release * 0.55;
+    out.r[i] = (nr * 0.5 + gliss) * rise * release * 0.55;
   }
+  return out;
+}
+
+// ---- act II ----
+
+// the impact: pitch-dropping sub + low fifth swelling out + soft thump
+function slam(): Stereo {
+  const out = stereo(1.6);
+  const rng = mulberry32(3);
+  let lp = 0;
+  for (let i = 0; i < out.l.length; i++) {
+    const t = i / SR;
+    // sub drop 120 → 36 Hz
+    const drop = 36 + 84 * Math.exp(-t / 0.16);
+    const subEnv = Math.min(1, t / 0.006) * Math.exp(-t / 0.3);
+    const sub = Math.tanh(Math.sin(TAU * drop * t) * 1.8) * subEnv * 0.8;
+    // soft thump of contact
+    lp += (rng() * 2 - 1 - lp) * 0.12;
+    const thump = lp * Math.exp(-t / 0.045) * 0.5;
+    out.l[i] = sub + thump;
+    out.r[i] = sub + thump;
+  }
+  // the low fifth blooms out of the impact, slightly detuned for width
+  const cents = Math.pow(2, 2 / 1200);
+  mixPan(out, note(A1, 1.5, { gain: 0.3, attack: 0.05, decay: 0.5 }), 0.02, -0.25);
+  mixPan(out, note(A1 * cents, 1.5, { gain: 0.3, attack: 0.05, decay: 0.5 }), 0.02, 0.25);
+  mixPan(out, note(E2, 1.4, { gain: 0.22, attack: 0.07, decay: 0.45 }), 0.05, 0);
   return muffle(out, 0.16);
 }
 
-// soft rounded settle when the number stops
-function land(): Float32Array {
-  const out = buf(0.5);
-  for (let i = 0; i < out.length; i++) {
-    const t = i / SR;
-    const env = Math.min(1, t / 0.012) * Math.exp(-t / 0.2);
-    out[i] = (Math.sin(TAU * 196 * t) + 0.4 * Math.sin(TAU * 294 * t)) * env * 0.45;
+// decelerating ticks that climb the pentatonic ladder — winding up to the ding
+function roll(): Stereo {
+  const dur = 1.55;
+  const out = stereo(dur);
+  const ladder = [A3, C4, D4, E4, G4, A4];
+  const n = 26;
+  for (let k = 0; k < n; k++) {
+    const y = (k + 1) / n;
+    const at = dur * (1 - Math.pow(1 - y, 1 / 3));
+    const freq = ladder[Math.min(ladder.length - 1, Math.floor(y * ladder.length))];
+    const tick = note(freq, 0.06, { gain: 0.42 + 0.12 * y, attack: 0.002, decay: 0.016, partials: [[1, 1]] });
+    mixPan(out, tick, at, k % 2 === 0 ? -0.14 : 0.14);
   }
-  return muffle(out, 0.2);
+  return muffle(out, 0.3);
 }
 
-// creamy swept swell that tracks the green shimmer
-function sweep(): Float32Array {
+// the peak — the broken chord made whole, allowed to shine
+function ding(): Stereo {
+  const out = stereo(1.3);
+  mixPan(out, note(A4, 1.25, { gain: 0.4, attack: 0.006, decay: 0.42 }), 0, -0.2);
+  mixPan(out, note(E5, 1.2, { gain: 0.26, attack: 0.006, decay: 0.38 }), 0.01, 0.25);
+  mixPan(out, note(A4 * 2, 1.0, { gain: 0.07, attack: 0.006, decay: 0.3, partials: [[1, 1]] }), 0.01, 0);
+  return muffle(out, 0.38);
+}
+
+// airy swell panning L→R with the shimmer
+function sweep(): Stereo {
   const dur = 1.2;
-  const out = buf(dur);
+  const out = stereo(dur);
   const rng = mulberry32(5);
   let lp = 0;
-  for (let i = 0; i < out.length; i++) {
-    const tn = i / out.length;
-    lp += (rng() * 2 - 1 - lp) * 0.05;
+  for (let i = 0; i < out.l.length; i++) {
+    const t = i / SR;
+    const tn = t / dur;
+    lp += (rng() * 2 - 1 - lp) * 0.06;
     const env = Math.sin(Math.PI * tn) ** 2;
-    const tone = Math.sin(TAU * (95 + 35 * tn) * (i / SR)) * 0.35;
-    out[i] = (lp * 0.45 + tone) * env * 0.32;
+    const tone = (Math.sin(TAU * E5 * t) * 0.12 + Math.sin(TAU * A4 * t) * 0.09) * env;
+    const s = (lp * 0.4 * env + tone) * 0.5;
+    const th = (tn * Math.PI) / 2; // equal-power L→R journey
+    out.l[i] = s * Math.cos(th);
+    out.r[i] = s * Math.sin(th);
   }
-  return muffle(out, 0.1);
+  return muffle(out, 0.14);
 }
 
-// warm low resolve chord for the CTA
-function resolve(): Float32Array {
-  const out = buf(1.1);
-  [261.63, 329.63, 392.0, 523.25].forEach((f, i) =>
-    mix(out, note(f, 1.0, { gain: 0.16, attack: 0.03, decay: 0.55 }), i * 0.035),
-  );
-  return muffle(out, 0.13);
+// ---- act III ----
+
+// Am(add9) under the wordmark, gently strummed and spread
+function word(): Stereo {
+  const out = stereo(1.4);
+  const chord: [number, number][] = [
+    [A3, -0.3],
+    [C4, -0.1],
+    [E4, 0.1],
+    [B4, 0.3],
+  ];
+  chord.forEach(([f, pan], i) => {
+    mixPan(out, note(f, 1.2, { gain: 0.2, attack: 0.012, decay: 0.5 }), i * 0.035, pan);
+  });
+  return muffle(out, 0.25);
+}
+
+// theme switches: three steps out, then home to the tonic
+function step(freq: number): Stereo {
+  const out = stereo(0.5);
+  mixPan(out, note(freq, 0.45, { gain: 0.42, attack: 0.003, decay: 0.12 }), 0, 0);
+  return muffle(out, 0.22);
+}
+
+// the cadence — A major. minor film, major ending.
+function resolve(): Stereo {
+  const out = stereo(1.8);
+  const chord: [number, number][] = [
+    [A2, 0],
+    [E3, -0.25],
+    [A3, 0.25],
+    [CS4, -0.12],
+    [E4, 0.12],
+  ];
+  chord.forEach(([f, pan], i) => {
+    mixPan(out, note(f, 1.6, { gain: 0.16, attack: 0.02, decay: 0.65 }), i * 0.04, pan);
+  });
+  return muffle(out, 0.15);
 }
 
 const outDir = fileURLToPath(new URL("../public/sfx/", import.meta.url));
 await mkdir(outDir, { recursive: true });
-const sfx: Record<string, Float32Array> = {
-  place: place(),
+const sfx: Record<string, Stereo> = {
+  bed: bed(),
+  pluck1: pluck(A3, -0.6),
+  pluck2: pluck(C4, 0.05),
+  pluck3: pluck(E4, 0.6),
+  riser: riser(),
+  slam: slam(),
   roll: roll(),
-  land: land(),
+  ding: ding(),
   sweep: sweep(),
+  word: word(),
+  step1: step(D4),
+  step2: step(E4),
+  step3: step(G4),
+  step4: step(A3),
   resolve: resolve(),
 };
 for (const [name, samples] of Object.entries(sfx)) {
+  const peak = Math.max(
+    ...Array.from(samples.l, Math.abs),
+    ...Array.from(samples.r, Math.abs),
+  );
   await writeFile(join(outDir, `${name}.wav`), toWav(samples));
+  console.log(`wrote sfx/${name}.wav  peak ${peak.toFixed(2)}`);
 }
-console.log("wrote sfx:", Object.keys(sfx).join(", "));
