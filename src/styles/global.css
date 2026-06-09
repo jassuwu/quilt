@@ -77,4 +77,15 @@
     outline-offset: 2px;
     border-radius: 2px;
   }
+
+  /*
+    On phones the fit-to-width year collapses to ~5px patches — let the quilt
+    keep its natural size and scroll instead (the renderer sets max-width as
+    an inline style, hence the !important).
+  */
+  @media (max-width: 640px) {
+    #quilt-graph svg {
+      max-width: none !important;
+    }
+  }
 }

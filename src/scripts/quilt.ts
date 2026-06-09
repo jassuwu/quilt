@@ -231,7 +231,11 @@ async function run(usernames: string[], year: Year): Promise<void> {
 
   currentQuilt = mergeContributions(sources);
   renderStats(currentQuilt);
-  if (graphEl) graphEl.innerHTML = renderQuiltSvg(currentQuilt);
+  if (graphEl) {
+    graphEl.innerHTML = renderQuiltSvg(currentQuilt);
+    // on phones the graph scrolls — land on the most recent weeks
+    graphEl.scrollLeft = graphEl.scrollWidth;
+  }
   refreshEmbed();
   result?.classList.remove("hidden");
   result?.classList.add("flex");
