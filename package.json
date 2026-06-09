@@ -13,7 +13,8 @@
     "astro": "astro",
     "typecheck": "astro check",
     "fmt": "prettier --write .",
-    "fmt:check": "prettier --check ."
+    "fmt:check": "prettier --check .",
+    "test": "bun test"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
