@@ -45,8 +45,14 @@ async function withRetry<T>(fn: () => Promise<T>, retries: number): Promise<T> {
       return await fn();
     } catch (error) {
       lastError = error;
-      // A missing user will never succeed — fail fast.
-      if (error instanceof ContributionsError && error.status === 404)
+      // 4xx won't succeed on retry — a missing user never will, and hammering
+      // a rate-limiting upstream with sub-second backoff only feeds the storm.
+      if (
+        error instanceof ContributionsError &&
+        error.status !== undefined &&
+        error.status >= 400 &&
+        error.status < 500
+      )
         throw error;
       if (attempt === retries) break;
       await sleep(250 * 2 ** attempt);

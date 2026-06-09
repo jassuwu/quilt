@@ -59,4 +59,17 @@ describe("fetchContributions", () => {
       ContributionsError,
     );
   });
+
+  test("fails fast on 4xx instead of retrying", async () => {
+    clearCache();
+    let calls = 0;
+    const fetchImpl = (async () => {
+      calls += 1;
+      return new Response("", { status: 429 });
+    }) as unknown as typeof fetch;
+    await expect(
+      fetchContributions("octocat", { fetchImpl, retries: 3 }),
+    ).rejects.toBeInstanceOf(ContributionsError);
+    expect(calls).toBe(1);
+  });
 });
