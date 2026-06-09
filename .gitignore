@@ -22,3 +22,12 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# vercel
+.vercel/
+
+# generated share cards (regenerate: bun run og)
+public/og/
+
+# remotion renders
+remotion/out/
