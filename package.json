@@ -12,6 +12,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "icons": "bun run scripts/build-icons.ts",
+    "og": "bun run scripts/build-og.ts",
     "typecheck": "astro check",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",

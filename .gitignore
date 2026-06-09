@@ -26,8 +26,9 @@ pnpm-debug.log*
 # vercel
 .vercel/
 
-# generated share cards (regenerate: bun run og)
-public/og/
+# generated share cards (regenerate: bun run og) — keep the default, drop per-combo
+public/og/*
+!public/og/default.png
 
 # remotion renders
 remotion/out/
