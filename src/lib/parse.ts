@@ -3,15 +3,15 @@ export const MAX_ACCOUNTS = 10;
 
 /**
  * People paste what they have — @handles, profile URLs, trailing junk.
- * Reduce a token to the bare username instead of erroring on it.
+ * Reduce a token to the bare username instead of erroring on it. Path
+ * truncation only applies to URL-shaped tokens: a bare `a/b` passes through
+ * to fail loudly downstream rather than silently dropping an account.
  */
 function normalizeAccount(raw: string): string {
-  return raw
-    .trim()
-    .replace(/^https?:\/\//i, "")
-    .replace(/^(www\.)?github\.com\//i, "")
-    .split(/[/?#]/, 1)[0]
-    .replace(/^@/, "");
+  const trimmed = raw.trim();
+  const url = trimmed.match(/^(?:https?:\/\/)?(?:www\.)?github\.com\/(.*)$/i);
+  const name = url ? url[1].split(/[/?#]/, 1)[0] : trimmed;
+  return name.replace(/^@/, "");
 }
 
 /**

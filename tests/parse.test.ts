@@ -39,4 +39,8 @@ describe("parseUsernames", () => {
       "jassuwu",
     ]);
   });
+
+  test("bare a/b tokens pass through to fail loudly, not silently truncate", () => {
+    expect(parseUsernames("jassuwu/torvalds")).toEqual(["jassuwu/torvalds"]);
+  });
 });
