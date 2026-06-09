@@ -61,8 +61,16 @@ export const GET: APIRoute = async ({ params, url }) => {
   const y = url.searchParams.get("y");
   const year = y && /^\d{4}$/.test(y) ? Number(y) : "last";
 
+  // camo gives an origin only a few seconds before it shows a broken image,
+  // so one retry and a hard deadline beat the default patient backoff here.
   const settled = await Promise.allSettled(
-    usernames.map((u) => fetchContributions(u, { year })),
+    usernames.map((u) =>
+      fetchContributions(u, {
+        year,
+        retries: 1,
+        signal: AbortSignal.timeout(3500),
+      }),
+    ),
   );
   const sources = settled.flatMap((outcome): AccountContributions[] =>
     outcome.status === "fulfilled" ? [outcome.value] : [],
