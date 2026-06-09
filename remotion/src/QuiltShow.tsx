@@ -182,23 +182,37 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
   const themePulse =
     [...THEME_STEPS, THEME_HOME].reduce((s, at) => s + bumpAt(frame, at, 0.014), 0);
 
-  // impact dressing: shake, a dim flash, a shockwave ring
+  // impact dressing: shake, a dim flash, a camera punch-in — every effect
+  // lives in the material or the camera, nothing painted on top
   const shakeX = shakeAt(frame, SLAM, 6);
   const shakeY = shakeAt(frame, SLAM, 4);
   const flash = frame >= SLAM ? 0.06 * Math.exp(-(frame - SLAM) * 0.55) : 0;
-  const ringT = interpolate(frame, [SLAM, SLAM + 20], [0, 1], clamp);
+  const punch = 1 + bumpAt(frame, SLAM, 0.04);
+  // the impact ripples THROUGH the quilt: a bright wavefront radiating from
+  // the contact point, riding just ahead of the bloom
+  const rippleFront = interpolate(frame, [SLAM, DENSIFY_END], [0, 1.15], clamp);
 
   const mergedCell = (r: number, c: number): CellStyle => {
-    const popStart = SLAM + radial(r, c) * (DENSIFY_END - SLAM) * 0.85;
+    const rad = radial(r, c);
+    const popStart = SLAM + rad * (DENSIFY_END - SLAM) * 0.85;
     const pop = interpolate(frame, [popStart, popStart + 8], [0, 1], clamp);
     const level = mergedLevel(MERGED[r][c]);
     const dist = wavePos - c;
     const bump = frame >= REVEAL_START ? Math.exp(-(dist * dist) / 6) : 0;
+    // the impact wavefront passing through this patch
+    const edge =
+      frame >= SLAM && frame < DENSIFY_END + 4
+        ? Math.exp(-Math.pow((rad - rippleFront) * 9, 2))
+        : 0;
+    const glowA = Math.max(bump * 0.55, edge * 0.5);
     return {
       color: lerpColor(themeT, themeFrom.levels[level], themeTo.levels[level]),
       opacity: mergedAppear * (0.35 + 0.65 * pop),
-      scale: 0.72 + 0.28 * pop + 0.22 * bump,
-      glow: bump > 0.25 && level >= 2 ? `0 0 ${bump * 10}px rgba(57,211,83,${0.55 * bump})` : "none",
+      scale: 0.72 + 0.28 * pop + 0.22 * bump + 0.14 * edge,
+      glow:
+        glowA > 0.14 && level >= 2
+          ? `0 0 ${Math.max(bump, edge) * 11}px rgba(57,211,83,${glowA})`
+          : "none",
     };
   };
 
@@ -212,6 +226,9 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
           {/* act I — three notes of a broken chord, one per card (panned L/C/R) */}
           <Sequence>
             <Audio src={staticFile("sfx/bed.wav")} volume={0.55} />
+          </Sequence>
+          <Sequence>
+            <Audio src={staticFile("sfx/ostinato.wav")} volume={0.5} />
           </Sequence>
           {[1, 2, 3].map((n) => (
             <Sequence key={n} from={(n - 1) * CARD_STAGGER}>
@@ -255,7 +272,15 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
         </>
       )}
 
-      <AbsoluteFill style={{ transform: `translate(${shakeX}px, ${shakeY}px)` }}>
+      {/* a soft light where the quilt lives — depth without drawing anything */}
+      <AbsoluteFill
+        style={{
+          background:
+            "radial-gradient(ellipse 62% 34% at 50% 44%, rgba(230,237,243,0.045), transparent 70%)",
+        }}
+      />
+
+      <AbsoluteFill style={{ transform: `translate(${shakeX}px, ${shakeY}px) scale(${punch})` }}>
         {/* top zone: number → wordmark */}
         <div style={{ position: "absolute", top: 108, left: 0, right: 0, textAlign: "center", opacity: countIn * interpolate(frame, [WORD_START - 6, WORD_START + 6], [1, 0], clamp) }}>
           <div style={{ fontFamily: MONO, fontSize: 112, fontWeight: 700, letterSpacing: -3, fontVariantNumeric: "tabular-nums", transform: `scale(${countPop})` }}>
@@ -283,7 +308,9 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
         <div style={{ position: "absolute", top: 360, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
           <div style={{ position: "relative", width: GRID_W, height: GRID_H, transform: `scale(${stackScale + themePulse})` }}>
             {ACCOUNTS.map((acc, i) => {
-              const appear = interpolate(frame, [i * CARD_STAGGER, i * CARD_STAGGER + 20], [0, 1], clamp);
+              const appear = ease(
+                interpolate(frame, [i * CARD_STAGGER, i * CARD_STAGGER + 20], [0, 1], clamp),
+              );
               // the cards die in the flash, not before it
               const fade = interpolate(frame, [SLAM, SLAM + 4], [1, 0], clamp);
               const x = FAN[i].x * (1 - gatherT);
@@ -305,23 +332,6 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
             <div style={{ position: "absolute", inset: 0 }}>
               <CellGrid cell={mergedCell} />
             </div>
-            {/* shockwave ring from the impact */}
-            {ringT > 0 && ringT < 1 && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  top: "50%",
-                  width: 560,
-                  height: 280,
-                  marginLeft: -280,
-                  marginTop: -140,
-                  borderRadius: "50%",
-                  border: `2px solid rgba(57,211,83,${0.55 * (1 - ringT)})`,
-                  transform: `scale(${0.25 + ringT * 2.4})`,
-                }}
-              />
-            )}
           </div>
         </div>
 
@@ -354,6 +364,15 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
       {flash > 0.004 && (
         <AbsoluteFill style={{ backgroundColor: `rgba(230,237,243,${flash})`, pointerEvents: "none" }} />
       )}
+
+      {/* the grade: a quiet vignette over everything */}
+      <AbsoluteFill
+        style={{
+          background:
+            "radial-gradient(ellipse 75% 70% at 50% 46%, transparent 58%, rgba(0,0,0,0.33) 100%)",
+          pointerEvents: "none",
+        }}
+      />
     </AbsoluteFill>
   );
 };

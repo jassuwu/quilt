@@ -18,4 +18,4 @@ export const THEME_STEPS = [248, 266, 284] as const; // dracula → nord → tok
 export const THEME_HOME = 302; // ...and home to green
 export const HERO_DURATION = 318; // silent README hero
 export const CTA_START = 322;
-export const SOCIAL_DURATION = 384; // + CTA end card
+export const SOCIAL_DURATION = 400; // + CTA end card (room for the chord's tail)

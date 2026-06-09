@@ -101,6 +101,50 @@ function muffle(s: Stereo, coef: number): Stereo {
   return s;
 }
 
+/**
+ * the room — a small Schroeder reverb (4 combs + 2 allpasses per channel,
+ * R delays offset for width). Returns a longer buffer so tails breathe.
+ */
+function reverb(s: Stereo, wet: number, decaySec = 1.6): Stereo {
+  const n = s.l.length + secs(decaySec);
+  const out = stereo(n / SR + 0.01);
+  const channel = (input: Float32Array, dest: Float32Array, offset: number) => {
+    const combs = [1557, 1617, 1491, 1422].map((d) => d + offset);
+    const aps = [225, 556].map((d) => d + offset);
+    const combBufs = combs.map((d) => new Float32Array(d));
+    const fbs = combs.map((d) => Math.pow(10, (-3 * d) / (SR * decaySec)));
+    const apBufs = aps.map((d) => new Float32Array(d));
+    let idx = combs.map(() => 0);
+    let apIdx = aps.map(() => 0);
+    for (let i = 0; i < dest.length; i++) {
+      const dry = i < input.length ? input[i] : 0;
+      let acc = 0;
+      for (let k = 0; k < combs.length; k++) {
+        const buf = combBufs[k];
+        const j = idx[k];
+        const y = buf[j];
+        buf[j] = dry + y * fbs[k];
+        idx[k] = (j + 1) % buf.length;
+        acc += y;
+      }
+      acc /= combs.length;
+      for (let k = 0; k < aps.length; k++) {
+        const buf = apBufs[k];
+        const j = apIdx[k];
+        const y = buf[j];
+        const v = acc + y * 0.5;
+        buf[j] = v;
+        apIdx[k] = (j + 1) % buf.length;
+        acc = y - v * 0.5;
+      }
+      dest[i] = dry * (1 - wet) + acc * wet;
+    }
+  };
+  channel(s.l, out.l, 0);
+  channel(s.r, out.r, 23);
+  return out;
+}
+
 interface NoteOpts {
   gain?: number;
   attack?: number;
@@ -146,7 +190,50 @@ function bed(): Stereo {
 function pluck(freq: number, pan: number): Stereo {
   const out = stereo(0.9);
   mixPan(out, note(freq, 0.85, { gain: 0.5, decay: 0.32 }), 0, pan);
-  return muffle(out, 0.3);
+  return reverb(muffle(out, 0.3), 0.15, 1.2);
+}
+
+// the spine — a quiet pulsing ostinato that builds through act I, vanishes
+// into the held breath, and carries the rest of the film at a murmur.
+// Pulses every 0.4s (12 frames), A2–E3–A3–E3, accent on the one.
+function ostinato(): Stereo {
+  const out = stereo(11.4);
+  const pattern = [A2, E3, A3, E3];
+  const env = (t: number): number => {
+    if (t < 1.7) return 0.35 + 0.65 * (t / 1.7); // build
+    if (t < 2.3) return 0; // the breath + the impact, untouched
+    if (t < 4.6) return 0.55; // under the wind-up
+    if (t < 6.1) return 0.45; // under the shimmer
+    if (t < 10.0) return 0.34; // a murmur under acts III
+    if (t < 10.7) return 0.34 * (1 - (t - 10.0) / 0.7); // bow out before the CTA
+    return 0;
+  };
+  for (let k = 0; ; k++) {
+    const at = k * 0.4;
+    if (at >= 10.7) break;
+    const g = env(at);
+    if (g <= 0) continue;
+    const accent = k % 4 === 0 ? 1.25 : 1;
+    const p = note(pattern[k % 4], 0.34, {
+      gain: 0.26 * g * accent,
+      attack: 0.004,
+      decay: 0.09,
+      partials: [
+        [1, 1],
+        [2, 0.15],
+      ],
+    });
+    mixPan(out, p, at, k % 2 === 0 ? -0.06 : 0.06);
+  }
+  const wet = reverb(muffle(out, 0.12), 0.12, 1.1);
+  // keep the held breath truly silent: hard duck 1.78–2.05s post-reverb
+  for (let i = secs(1.78); i < secs(2.05) && i < wet.l.length; i++) {
+    const t = (i - secs(1.78)) / (secs(2.05) - secs(1.78));
+    const g = t < 0.35 ? 1 - t / 0.35 : 0;
+    wet.l[i] *= g;
+    wet.r[i] *= g;
+  }
+  return wet;
 }
 
 // noise + gliss tightening through the converge; dies into baked-in silence
@@ -175,9 +262,9 @@ function riser(): Stereo {
 
 // ---- act II ----
 
-// the impact: pitch-dropping sub + low fifth swelling out + soft thump
+// the impact: pitch-dropping sub + a braam cluster + low fifth + soft thump
 function slam(): Stereo {
-  const out = stereo(1.6);
+  const out = stereo(2.2);
   const rng = mulberry32(3);
   let lp = 0;
   for (let i = 0; i < out.l.length; i++) {
@@ -189,15 +276,24 @@ function slam(): Stereo {
     // soft thump of contact
     lp += (rng() * 2 - 1 - lp) * 0.12;
     const thump = lp * Math.exp(-t / 0.045) * 0.5;
-    out.l[i] = sub + thump;
-    out.r[i] = sub + thump;
+    // the braam — detuned saw cluster on A, swelling out of the hit,
+    // domesticated by the heavy low-pass below
+    const braamEnv = Math.min(1, t / 0.06) * Math.exp(-t / 0.55);
+    let braam = 0;
+    for (const det of [0.992, 1, 1.009]) {
+      const f = A1 * 2 * det;
+      braam += (2 * ((f * t) % 1) - 1) * 0.1;
+    }
+    braam *= braamEnv;
+    out.l[i] = sub + thump + braam;
+    out.r[i] = sub + thump + braam * 0.92;
   }
   // the low fifth blooms out of the impact, slightly detuned for width
   const cents = Math.pow(2, 2 / 1200);
-  mixPan(out, note(A1, 1.5, { gain: 0.3, attack: 0.05, decay: 0.5 }), 0.02, -0.25);
-  mixPan(out, note(A1 * cents, 1.5, { gain: 0.3, attack: 0.05, decay: 0.5 }), 0.02, 0.25);
-  mixPan(out, note(E2, 1.4, { gain: 0.22, attack: 0.07, decay: 0.45 }), 0.05, 0);
-  return muffle(out, 0.16);
+  mixPan(out, note(A1, 1.8, { gain: 0.3, attack: 0.05, decay: 0.55 }), 0.02, -0.25);
+  mixPan(out, note(A1 * cents, 1.8, { gain: 0.3, attack: 0.05, decay: 0.55 }), 0.02, 0.25);
+  mixPan(out, note(E2, 1.7, { gain: 0.22, attack: 0.07, decay: 0.5 }), 0.05, 0);
+  return reverb(muffle(out, 0.16), 0.2, 1.8);
 }
 
 // decelerating ticks that climb the pentatonic ladder — winding up to the ding
@@ -213,7 +309,7 @@ function roll(): Stereo {
     const tick = note(freq, 0.06, { gain: 0.42 + 0.12 * y, attack: 0.002, decay: 0.016, partials: [[1, 1]] });
     mixPan(out, tick, at, k % 2 === 0 ? -0.14 : 0.14);
   }
-  return muffle(out, 0.3);
+  return reverb(muffle(out, 0.3), 0.08, 0.9);
 }
 
 // the peak — the broken chord made whole, allowed to shine
@@ -222,7 +318,7 @@ function ding(): Stereo {
   mixPan(out, note(A4, 1.25, { gain: 0.4, attack: 0.006, decay: 0.42 }), 0, -0.2);
   mixPan(out, note(E5, 1.2, { gain: 0.26, attack: 0.006, decay: 0.38 }), 0.01, 0.25);
   mixPan(out, note(A4 * 2, 1.0, { gain: 0.07, attack: 0.006, decay: 0.3, partials: [[1, 1]] }), 0.01, 0);
-  return muffle(out, 0.38);
+  return reverb(muffle(out, 0.38), 0.32, 2.0);
 }
 
 // airy swell panning L→R with the shimmer
@@ -242,7 +338,7 @@ function sweep(): Stereo {
     out.l[i] = s * Math.cos(th);
     out.r[i] = s * Math.sin(th);
   }
-  return muffle(out, 0.14);
+  return reverb(muffle(out, 0.14), 0.18, 1.4);
 }
 
 // ---- act III ----
@@ -259,19 +355,19 @@ function word(): Stereo {
   chord.forEach(([f, pan], i) => {
     mixPan(out, note(f, 1.2, { gain: 0.2, attack: 0.012, decay: 0.5 }), i * 0.035, pan);
   });
-  return muffle(out, 0.25);
+  return reverb(muffle(out, 0.25), 0.28, 1.8);
 }
 
 // theme switches: three steps out, then home to the tonic
 function step(freq: number): Stereo {
   const out = stereo(0.5);
   mixPan(out, note(freq, 0.45, { gain: 0.42, attack: 0.003, decay: 0.12 }), 0, 0);
-  return muffle(out, 0.22);
+  return reverb(muffle(out, 0.22), 0.22, 1.2);
 }
 
 // the cadence — A major. minor film, major ending.
 function resolve(): Stereo {
-  const out = stereo(1.8);
+  const out = stereo(2.4);
   const chord: [number, number][] = [
     [A2, 0],
     [E3, -0.25],
@@ -280,15 +376,16 @@ function resolve(): Stereo {
     [E4, 0.12],
   ];
   chord.forEach(([f, pan], i) => {
-    mixPan(out, note(f, 1.6, { gain: 0.16, attack: 0.02, decay: 0.65 }), i * 0.04, pan);
+    mixPan(out, note(f, 2.1, { gain: 0.16, attack: 0.02, decay: 0.75 }), i * 0.04, pan);
   });
-  return muffle(out, 0.15);
+  return reverb(muffle(out, 0.15), 0.38, 2.4);
 }
 
 const outDir = fileURLToPath(new URL("../public/sfx/", import.meta.url));
 await mkdir(outDir, { recursive: true });
 const sfx: Record<string, Stereo> = {
   bed: bed(),
+  ostinato: ostinato(),
   pluck1: pluck(A3, -0.6),
   pluck2: pluck(C4, 0.05),
   pluck3: pluck(E4, 0.6),
@@ -305,10 +402,13 @@ const sfx: Record<string, Stereo> = {
   resolve: resolve(),
 };
 for (const [name, samples] of Object.entries(sfx)) {
-  const peak = Math.max(
-    ...Array.from(samples.l, Math.abs),
-    ...Array.from(samples.r, Math.abs),
-  );
+  let peak = 0;
+  for (let i = 0; i < samples.l.length; i++) {
+    const a = Math.abs(samples.l[i]);
+    const b = Math.abs(samples.r[i]);
+    if (a > peak) peak = a;
+    if (b > peak) peak = b;
+  }
   await writeFile(join(outDir, `${name}.wav`), toWav(samples));
   console.log(`wrote sfx/${name}.wav  peak ${peak.toFixed(2)}`);
 }
