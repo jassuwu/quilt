@@ -40,7 +40,8 @@ drop your merged quilt into a README or any site with one URL. no build step, no
 ![my contributions](https://quilt.jass.gg/u/jassuwu,torvalds.svg)
 ```
 
-add `?theme=light` for light READMEs/sites and `?y=2024` for a specific year. the SVG is
+style it with query params — `?color=ff6ac1` and `?bg=160e23` to recolor it, `?theme=light`
+for light READMEs, `?y=2024` for a specific year (or tweak it live on the site). the SVG is
 rendered server-side and CDN-cached. it works anywhere `<img>` does, GitHub and GitLab
 READMEs included.
 
