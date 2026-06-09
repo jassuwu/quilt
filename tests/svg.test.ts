@@ -43,4 +43,10 @@ describe("renderQuiltSvg", () => {
     expect(svg).toContain("translate(16,16)");
     expect(svg).not.toContain("max-width:100%"); // fixed size for <img>
   });
+
+  test("embed footer carries the quilt.jass.gg attribution", () => {
+    const svg = renderQuiltSvg(quilt, { embed: true });
+    expect(svg).toContain("quilt.jass.gg");
+    expect(svg).toContain('href="https://quilt.jass.gg/?u=a,b"');
+  });
 });

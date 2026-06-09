@@ -172,16 +172,36 @@ export function renderQuiltSvg(
     const h = height + footerH + pad * 2;
     const font = "ui-sans-serif,-apple-system,'Segoe UI',Roboto,sans-serif";
 
-    // footer: linked accounts + total on the left, a less→more legend on the right
+    // footer: linked accounts + total + attribution on the left, a less→more
+    // legend on the right
     const fy = height + 16;
+    const legendX = Math.max(0, width - 128);
     const links = quilt.usernames
       .map(
         (u) =>
           `<a href="https://github.com/${u}" target="_blank"><tspan text-decoration="underline">${u}</tspan></a>`,
       )
       .join("<tspan> + </tspan>");
-    const summary = `<text x="0" y="${fy + 9}" font-size="11" fill="${muted}">${links}<tspan> · ${quilt.total.toLocaleString("en-US")} contributions</tspan></text>`;
-    const legendX = Math.max(0, width - 128);
+
+    // keep the left summary out of the legend's lane: optional parts only
+    // render while the ~6px/char estimate stays inside the budget.
+    const CHAR_W = 6;
+    const budget = legendX - 12;
+    const domainText = " · quilt.jass.gg";
+    let textLen = quilt.usernames.join(" + ").length + domainText.length;
+    let extras = "";
+    for (const part of [
+      ` · ${quilt.total.toLocaleString("en-US")} contributions`,
+    ]) {
+      if ((textLen + part.length) * CHAR_W > budget) break;
+      extras += `<tspan>${part}</tspan>`;
+      textLen += part.length;
+    }
+
+    // the attribution is the only path from a README back to the product —
+    // camo strips the link, but the visible domain is the point.
+    const domain = `<a href="https://quilt.jass.gg/?u=${quilt.usernames.join(",")}"><tspan>${domainText}</tspan></a>`;
+    const summary = `<text x="0" y="${fy + 9}" font-size="11" fill="${muted}">${links}${extras}${domain}</text>`;
     let legend = `<text x="${legendX}" y="${fy + 9}" font-size="11" fill="${muted}">less</text>`;
     for (let i = 0; i < 5; i++) {
       legend += `<rect x="${legendX + 30 + i * 13}" y="${fy}" width="10" height="10" rx="2" fill="${levels[i]}"/>`;
