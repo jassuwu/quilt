@@ -12,6 +12,8 @@ const DEFAULT_BG = "#0d1117";
 
 const form = document.querySelector<HTMLFormElement>("#quilt-form");
 const input = document.querySelector<HTMLInputElement>("#quilt-input");
+const exampleRow = document.querySelector<HTMLElement>("#quilt-example-row");
+const example = document.querySelector<HTMLAnchorElement>("#quilt-example");
 const status = document.querySelector<HTMLParagraphElement>("#quilt-status");
 const result = document.querySelector<HTMLElement>("#quilt-result");
 const statsEl = document.querySelector<HTMLElement>("#quilt-stats");
@@ -239,6 +241,7 @@ async function run(usernames: string[], year: Year): Promise<void> {
   refreshEmbed();
   result?.classList.remove("hidden");
   result?.classList.add("flex");
+  exampleRow?.classList.add("hidden");
 
   if (errors.length) {
     setStatus(
@@ -252,7 +255,22 @@ async function run(usernames: string[], year: Year): Promise<void> {
 
 form?.addEventListener("submit", (event) => {
   event.preventDefault();
-  void run(parseUsernames(input?.value ?? ""), activeYear);
+  let usernames = parseUsernames(input?.value ?? "");
+  // stitching the empty form runs the example the placeholder is showing
+  if (!usernames.length && input) {
+    usernames = parseUsernames(input.placeholder);
+    input.value = usernames.join(", ");
+  }
+  void run(usernames, activeYear);
+});
+
+example?.addEventListener("click", (event) => {
+  event.preventDefault();
+  const demo = parseUsernames(
+    new URL(example.href).searchParams.get("u") ?? "",
+  );
+  if (input) input.value = demo.join(", ");
+  void run(demo, activeYear);
 });
 
 yearsEl?.addEventListener("click", (event) => {
@@ -297,4 +315,7 @@ const fromUrl = parseUsernames(params.get("u") ?? "");
 if (fromUrl.length && input) {
   input.value = fromUrl.join(", ");
   void run(fromUrl, parseYear(params.get("y")));
+} else if (input && matchMedia("(pointer: fine)").matches) {
+  // desktop only — autofocus on touch would pop the keyboard over the page
+  input.focus();
 }
