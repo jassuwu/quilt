@@ -9,15 +9,19 @@
 merge the GitHub contribution graphs of every account you have into one consolidated
 quilt of green — so your real activity finally looks as busy as it is.
 
-![live](https://img.shields.io/badge/live-quilt.jass.gg-39d353?style=flat-square)
+**try it → [quilt.jass.gg](https://quilt.jass.gg)** · no login, nothing stored
+
+[![live](https://img.shields.io/badge/live-quilt.jass.gg-39d353?style=flat-square)](https://quilt.jass.gg)
 ![license](https://img.shields.io/badge/license-MIT-39d353?style=flat-square)
 ![built with astro](https://img.shields.io/badge/built%20with-Astro%206-39d353?style=flat-square)
 ![data](https://img.shields.io/badge/data-github--contributions--api-e8a87c?style=flat-square)
 
-<picture>
-  <source media="(prefers-reduced-motion: reduce)" srcset="./docs/assets/readme/quilt-poster.png" />
-  <img src="./docs/assets/readme/quilt-header.gif?v=1" width="900" alt="quilt: scattered GitHub accounts merging into one contribution quilt" />
-</picture>
+<a href="https://quilt.jass.gg">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="./docs/assets/readme/quilt-poster.png" />
+    <img src="./docs/assets/readme/quilt-header.gif?v=1" width="900" alt="quilt: scattered GitHub accounts merging into one contribution quilt" />
+  </picture>
+</a>
 
 _every account, one quilt._
 
@@ -28,7 +32,8 @@ _every account, one quilt._
 type your GitHub usernames → quilt fetches each account's contribution calendar,
 **sums every day's count across accounts**, recomputes the green levels from the merged
 distribution, and paints them into one quilt. the result lives in the URL
-(`quilt.jass.gg/?u=jassuwu,torvalds`), so it's a shareable link.
+([quilt.jass.gg/?u=jassuwu,torvalds](https://quilt.jass.gg/?u=jassuwu,torvalds)), so it's
+a shareable link.
 
 no login. nothing stored. all fetch + merge happens in your browser.
 
@@ -37,13 +42,19 @@ no login. nothing stored. all fetch + merge happens in your browser.
 drop your merged quilt into a README or any site with one URL. no build step, no JS:
 
 ```md
-![my contributions](https://quilt.jass.gg/u/jassuwu,torvalds.svg)
+[![my contributions](https://quilt.jass.gg/u/jassuwu,torvalds.svg)](https://quilt.jass.gg/?u=jassuwu,torvalds)
 ```
 
-style it with query params — `?color=ff6ac1` and `?bg=160e23` to recolor it, `?theme=light`
-for light READMEs, `?y=2024` for a specific year (or tweak it live on the site). the SVG is
-rendered server-side and CDN-cached. it works anywhere `<img>` does, GitHub and GitLab
-READMEs included.
+which renders this — live, straight from the CDN, re-stitched as the accounts contribute:
+
+[![contribution quilt for jassuwu + torvalds](https://quilt.jass.gg/u/jassuwu,torvalds.svg)](https://quilt.jass.gg/?u=jassuwu,torvalds)
+
+style it with query params — `?theme=dracula` (or `nord`, `tokyonight`, `gruvbox`,
+`catppuccin`, `solarized`, `mono`, `stitch`), `?theme=light` for light READMEs,
+`?color=ff6ac1` and `?bg=160e23` for a custom ramp, `?y=2024` for a specific year —
+or tweak it live on the site, including a `<picture>` snippet that follows GitHub's
+light/dark mode. the SVG is rendered server-side and CDN-cached. it works anywhere
+`<img>` does, GitHub and GitLab READMEs included.
 
 ## the data
 
