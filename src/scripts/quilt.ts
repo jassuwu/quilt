@@ -5,7 +5,7 @@ import { renderQuiltSvg } from "../lib/svg";
 import type { AccountContributions, Quilt } from "../lib/types";
 
 type Year = number | "last";
-type EmbedFmt = "md" | "html" | "url";
+type EmbedFmt = "md" | "html" | "auto" | "url";
 
 const EMBED_ORIGIN = "https://quilt.jass.gg";
 const DEFAULT_COLOR = "#39d353";
@@ -124,8 +124,11 @@ function embedOptions(): {
   };
 }
 
-function embedUrl(): string {
-  const opts = embedOptions();
+function embedUrlWith(opts: {
+  theme?: "light" | "dark";
+  color?: string;
+  bg?: string;
+}): string {
   const q: string[] = [];
   if (opts.theme === "light") q.push("theme=light");
   if (activeYear !== "last") q.push(`y=${activeYear}`);
@@ -133,6 +136,10 @@ function embedUrl(): string {
   if (opts.bg) q.push(`bg=${opts.bg.replace("#", "")}`);
   const base = `${EMBED_ORIGIN}/u/${activeUsernames.join(",")}.svg`;
   return q.length ? `${base}?${q.join("&")}` : base;
+}
+
+function embedUrl(): string {
+  return embedUrlWith(embedOptions());
 }
 
 function embedSnippet(): string {
@@ -146,6 +153,12 @@ function embedSnippet(): string {
   if (embedFmt === "md") return `[![${alt}](${url})](${page})`;
   if (embedFmt === "html")
     return `<a href="${page}"><img src="${url}" alt="${alt}" /></a>`;
+  if (embedFmt === "auto") {
+    // follows GitHub's color mode: customized card in dark, clean light card
+    // in light — a dark slab on a light README is how embeds get deleted.
+    const light = embedUrlWith({ theme: "light" });
+    return `<a href="${page}"><picture><source media="(prefers-color-scheme: dark)" srcset="${url}" /><source media="(prefers-color-scheme: light)" srcset="${light}" /><img src="${url}" alt="${alt}" /></picture></a>`;
+  }
   return url;
 }
 
@@ -154,6 +167,7 @@ function renderEmbed(): void {
     const tabs: [EmbedFmt, string][] = [
       ["md", "markdown"],
       ["html", "html"],
+      ["auto", "auto light/dark"],
       ["url", "url"],
     ];
     embedTabs.innerHTML = tabs
