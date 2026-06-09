@@ -35,6 +35,7 @@ const embedTabs = document.querySelector<HTMLElement>("#quilt-embed-tabs");
 const embedCode = document.querySelector<HTMLElement>("#quilt-embed-code");
 const embedCopy =
   document.querySelector<HTMLButtonElement>("#quilt-embed-copy");
+const shareBtn = document.querySelector<HTMLButtonElement>("#quilt-share");
 
 let activeUsernames: string[] = [];
 let activeYear: Year = "last";
@@ -306,19 +307,35 @@ embedReset?.addEventListener("click", () => {
   refreshEmbed();
 });
 
-embedCopy?.addEventListener("click", () => {
-  const button = embedCopy;
-  if (!button) return;
+function copyWithFeedback(
+  button: HTMLButtonElement,
+  text: string,
+  idleLabel: string,
+): void {
   navigator.clipboard
-    .writeText(embedSnippet())
+    .writeText(text)
     .then(() => {
       button.textContent = "copied";
-      setTimeout(() => (button.textContent = "copy"), 1500);
+      setTimeout(() => (button.textContent = idleLabel), 1500);
     })
     .catch(() => {
       button.textContent = "press ⌘C";
-      setTimeout(() => (button.textContent = "copy"), 1500);
+      setTimeout(() => (button.textContent = idleLabel), 1500);
     });
+}
+
+embedCopy?.addEventListener("click", () => {
+  if (embedCopy) copyWithFeedback(embedCopy, embedSnippet(), "copy");
+});
+
+shareBtn?.addEventListener("click", () => {
+  if (!shareBtn) return;
+  // the address bar already holds the shareable ?u= state — surface it
+  if (navigator.share && matchMedia("(pointer: coarse)").matches) {
+    void navigator.share({ url: location.href }).catch(() => {});
+    return;
+  }
+  copyWithFeedback(shareBtn, location.href, "copy link");
 });
 
 // Hydrate from a shared ?u=a,b&y=2024 link.
