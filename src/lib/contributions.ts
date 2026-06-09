@@ -34,7 +34,16 @@ export interface FetchOptions {
   fetchImpl?: typeof fetch;
 }
 
-const sessionCache = new Map<string, ContributionDay[]>();
+/**
+ * Memoized calendars. This module is shared by the embed route, where a warm
+ * serverless instance lives across requests — without a TTL it would answer
+ * CDN revalidations with the same frozen days forever (and grow unbounded).
+ */
+const CACHE_TTL_MS = 30 * 60 * 1000;
+const sessionCache = new Map<
+  string,
+  { days: ContributionDay[]; fetchedAt: number }
+>();
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -81,7 +90,11 @@ export async function fetchContributions(
   const year = options.year ?? "last";
   const cacheKey = `${name.toLowerCase()}:${year}`;
   const cached = sessionCache.get(cacheKey);
-  if (cached) return { username: name, days: cached };
+  if (cached) {
+    if (Date.now() - cached.fetchedAt < CACHE_TTL_MS)
+      return { username: name, days: cached.days };
+    sessionCache.delete(cacheKey);
+  }
 
   const doFetch = options.fetchImpl ?? fetch;
   const url = `${API_BASE}/${encodeURIComponent(name)}?y=${year}`;
@@ -109,7 +122,7 @@ export async function fetchContributions(
     return json.contributions ?? [];
   }, options.retries ?? 3);
 
-  sessionCache.set(cacheKey, days);
+  sessionCache.set(cacheKey, { days, fetchedAt: Date.now() });
   return { username: name, days };
 }
 

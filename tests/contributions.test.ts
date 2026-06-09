@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, setSystemTime, test } from "bun:test";
 import {
   ContributionsError,
   clearCache,
@@ -58,6 +58,31 @@ describe("fetchContributions", () => {
     await expect(fetchContributions("bad name")).rejects.toBeInstanceOf(
       ContributionsError,
     );
+  });
+
+  test("expires cached calendars after the TTL", async () => {
+    clearCache();
+    let calls = 0;
+    const fetchImpl = (async () => {
+      calls += 1;
+      return new Response(
+        JSON.stringify({ total: {}, contributions: [] }),
+        { status: 200 },
+      );
+    }) as unknown as typeof fetch;
+
+    try {
+      setSystemTime(new Date("2026-06-09T12:00:00Z"));
+      await fetchContributions("octocat", { fetchImpl });
+      await fetchContributions("octocat", { fetchImpl });
+      expect(calls).toBe(1);
+
+      setSystemTime(new Date("2026-06-09T12:31:00Z"));
+      await fetchContributions("octocat", { fetchImpl });
+      expect(calls).toBe(2);
+    } finally {
+      setSystemTime();
+    }
   });
 
   test("fails fast on 4xx instead of retrying", async () => {
