@@ -39,5 +39,4 @@ quilt/
 
 - Per-combo OG cards (can now reuse the `/u/[users].svg` route).
 - Site-wide light theme toggle (embeds already support `?theme=light`).
-- Private contributions via a per-account PAT.
 - Interactive iframe + PNG embed variants; richer streak math.
