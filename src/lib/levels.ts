@@ -16,6 +16,40 @@ export function hexForLevel(level: Level): string {
   return LEVEL_HEX[level];
 }
 
+export type Theme = "dark" | "light";
+
+export interface Palette {
+  /** Cell colours for levels 0–4. */
+  levels: readonly [string, string, string, string, string];
+  /** Card background (used by embeds). */
+  bg: string;
+  /** Label colour (months, weekdays). */
+  muted: string;
+}
+
+/**
+ * Theme palettes for the rendered SVG. Dark reuses the site ramp; light mirrors
+ * GitHub's light contribution ramp — for embeds on light READMEs/sites.
+ */
+export const PALETTES: Record<Theme, Palette> = {
+  dark: {
+    levels: [
+      LEVEL_HEX[0],
+      LEVEL_HEX[1],
+      LEVEL_HEX[2],
+      LEVEL_HEX[3],
+      LEVEL_HEX[4],
+    ],
+    bg: "#0d1117",
+    muted: "#7d8590",
+  },
+  light: {
+    levels: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
+    bg: "#ffffff",
+    muted: "#59636e",
+  },
+};
+
 /** Upper bounds for levels 1, 2 and 3 (level 4 is everything above). */
 export type Thresholds = [number, number, number];
 

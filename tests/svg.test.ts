@@ -21,13 +21,26 @@ describe("renderQuiltSvg", () => {
     expect(renderQuiltSvg({ ...quilt, days: [], from: "", to: "" })).toBe("");
   });
 
-  test("renders a responsive svg with one rect per day", () => {
+  test("renders a responsive dark svg with one rect per day", () => {
     const svg = renderQuiltSvg(quilt);
     expect(svg).toContain("<svg");
     expect(svg).toContain("max-width:100%");
     expect(svg).toContain('viewBox="0 0');
     expect((svg.match(/<rect/g) ?? []).length).toBe(2);
-    expect(svg).toContain("#39d353"); // level-4 green
+    expect(svg).toContain("#39d353"); // dark level-4 green
     expect(svg).toContain("5 contributions on 2026-01-02");
+  });
+
+  test("uses the light ramp when theme is light", () => {
+    const svg = renderQuiltSvg(quilt, { theme: "light" });
+    expect(svg).toContain("#216e39"); // light level-4 green
+    expect(svg).not.toContain("#39d353");
+  });
+
+  test("embed mode wraps in a themed, padded card", () => {
+    const svg = renderQuiltSvg(quilt, { theme: "light", embed: true });
+    expect(svg).toContain("#ffffff"); // light card background
+    expect(svg).toContain("translate(16,16)");
+    expect(svg).not.toContain("max-width:100%"); // fixed size for <img>
   });
 });
