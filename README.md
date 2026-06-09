@@ -1,43 +1,70 @@
-# Astro Starter Kit: Minimal
+<div align="center">
+
+<img src="./public/icon-512.png" width="76" alt="quilt" />
+
+# quilt
+
+**your contributions, all of them, in one green grid.**
+
+Merge the GitHub contribution graphs of every account you have into one consolidated
+quilt of green — so your real activity finally looks as busy as it is.
+
+![live](https://img.shields.io/badge/live-quilt.jass.gg-39d353?style=flat-square)
+![license](https://img.shields.io/badge/license-MIT-39d353?style=flat-square)
+![built with astro](https://img.shields.io/badge/built%20with-Astro%206-39d353?style=flat-square)
+![data](https://img.shields.io/badge/data-github--contributions--api-e8a87c?style=flat-square)
+
+<img src="./docs/assets/readme/quilt-poster.png" width="900" alt="quilt — many accounts merged into one green contribution grid" />
+
+_one dev. every account. one quilt._
+
+</div>
+
+## How it works
+
+Type your GitHub usernames → quilt fetches each account's contribution calendar,
+**sums every day's count across accounts**, recomputes the green levels from the merged
+distribution, and paints one GitHub-style grid. The result lives in the URL
+(`quilt.jass.gg/?u=jassucyd,jassuwu`), so it's a shareable link.
+
+No login. Nothing stored. All fetch + merge happens in your browser.
+
+## The data
+
+One source: the [github-contributions-api](https://github.com/grubersjoe/github-contributions-api),
+which scrapes the public profile graph — so it includes the **privatized-but-visible**
+green your profile already shows (when the account has that setting on). See
+[SOURCES.md](SOURCES.md) for why the GitHub GraphQL API doesn't work here.
+
+## Stack
+
+- **Astro 6** + **Tailwind v4** (CSS-first), strict TypeScript, **bun** — static, deployed on **Vercel**.
+- Pure, unit-tested merge core in `src/lib`; the grid, the OG card, and the demo share one green ramp.
+- Favicon/PWA icons + the OG share card are generated from one SVG mark via `@resvg/resvg-js`.
+- The hero/social demos are a sibling **Remotion** project in [`remotion/`](remotion/).
+
+## Commands
 
 ```sh
-bun create astro@latest -- --template minimal
+bun install
+bun run dev        # local dev server
+bun run test       # unit tests (merge + levels)
+bun run typecheck  # astro check
+bun run build      # static build → dist/
+bun run icons      # regenerate favicon + PWA icon set
+bun run og         # regenerate the default OG share card
+
+cd remotion && bun install
+bun run dev          # Remotion studio
+bun run poster       # still → out/quilt-poster.png
+bun run render:hero  # hero demo → out/quilt-hero.mp4
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Attribution
 
-## 🚀 Project Structure
+Contribution data via [grubersjoe/github-contributions-api](https://github.com/grubersjoe/github-contributions-api).
+Fonts: Bricolage Grotesque, Inter, JetBrains Mono (via [Fontsource](https://fontsource.org)).
 
-Inside of your Astro project, you'll see the following folders and files:
+## License
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
-
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
-
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `bun install`             | Installs dependencies                            |
-| `bun dev`             | Starts local dev server at `localhost:4321`      |
-| `bun build`           | Build your production site to `./dist/`          |
-| `bun preview`         | Preview your build locally, before deploying     |
-| `bun astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `bun astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+[MIT](LICENSE)
