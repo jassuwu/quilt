@@ -301,15 +301,14 @@ async function run(usernames: string[], year: Year): Promise<void> {
 
   currentQuilt = mergeContributions(sources);
   renderStats(currentQuilt);
-  if (graphEl) {
-    graphEl.innerHTML = renderQuiltSvg(currentQuilt);
-    // on phones the graph scrolls — land on the most recent weeks
-    graphEl.scrollLeft = graphEl.scrollWidth;
-  }
+  if (graphEl) graphEl.innerHTML = renderQuiltSvg(currentQuilt);
   refreshEmbed();
   result?.classList.remove("hidden");
   result?.classList.add("flex");
   exampleRow?.classList.add("hidden");
+  // on phones the graph scrolls — land on the most recent weeks (must run
+  // after the un-hide: a hidden element has no scrollWidth)
+  if (graphEl) graphEl.scrollLeft = graphEl.scrollWidth;
 
   const notes: string[] = [];
   if (overflow > 0)
