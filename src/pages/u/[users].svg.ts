@@ -4,6 +4,7 @@ import {
   fetchContributions,
   isValidUsername,
 } from "../../lib/contributions";
+import { PRESETS } from "../../lib/levels";
 import { mergeContributions } from "../../lib/merge";
 import { MAX_ACCOUNTS } from "../../lib/parse";
 import { isHexColor, placeholderSvg, renderQuiltSvg } from "../../lib/svg";
@@ -31,11 +32,18 @@ function svg(body: string, status: number, cacheControl: string): Response {
  * works in github readmes (`![](url)`) and any site (`<img src>`).
  */
 export const GET: APIRoute = async ({ params, url }) => {
-  const theme = url.searchParams.get("theme") === "light" ? "light" : "dark";
+  // ?theme= names a preset look (dracula, nord, …) or the plain light theme;
+  // explicit ?color/?bg params override the preset's parts.
+  const themeParam = url.searchParams.get("theme") ?? "";
+  const preset = Object.hasOwn(PRESETS, themeParam)
+    ? PRESETS[themeParam]
+    : undefined;
+  const theme = preset?.theme ?? (themeParam === "light" ? "light" : "dark");
   const bgParam = url.searchParams.get("bg");
   const colorParam = url.searchParams.get("color");
-  const bg = bgParam && isHexColor(bgParam) ? bgParam : undefined;
-  const color = colorParam && isHexColor(colorParam) ? colorParam : undefined;
+  const bg = bgParam && isHexColor(bgParam) ? bgParam : preset?.bg;
+  const color =
+    colorParam && isHexColor(colorParam) ? colorParam : preset?.color;
   const usernames = (params.users ?? "")
     .split(",")
     .map((u) => u.trim())

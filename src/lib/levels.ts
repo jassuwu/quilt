@@ -50,6 +50,29 @@ export const PALETTES: Record<Theme, Palette> = {
   },
 };
 
+/** A named embed look: a base theme (for labels) + card bg + ramp color. */
+export interface Preset {
+  theme: Theme;
+  bg: string;
+  color: string;
+}
+
+/**
+ * Named looks for the embed — `?theme=dracula` reads better in a README than
+ * a pair of hex params, and named themes are how embed snippets spread. The
+ * 1–4 ramp is derived from `color` over `bg` at render time.
+ */
+export const PRESETS: Record<string, Preset> = {
+  dracula: { theme: "dark", bg: "#282a36", color: "#bd93f9" },
+  nord: { theme: "dark", bg: "#2e3440", color: "#88c0d0" },
+  tokyonight: { theme: "dark", bg: "#1a1b26", color: "#7aa2f7" },
+  gruvbox: { theme: "dark", bg: "#282828", color: "#fabd2f" },
+  catppuccin: { theme: "dark", bg: "#1e1e2e", color: "#a6e3a1" },
+  solarized: { theme: "light", bg: "#fdf6e3", color: "#859900" },
+  mono: { theme: "dark", bg: "#0d1117", color: "#e6edf3" },
+  stitch: { theme: "dark", bg: "#0d1117", color: "#e8a87c" },
+};
+
 /** Upper bounds for levels 1, 2 and 3 (level 4 is everything above). */
 export type Thresholds = [number, number, number];
 

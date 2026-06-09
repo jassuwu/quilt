@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
+  PALETTES,
+  PRESETS,
   type Thresholds,
   computeThresholds,
   hexForLevel,
@@ -13,6 +15,21 @@ describe("hexForLevel", () => {
     expect(hexForLevel(2)).toBe("#006d32");
     expect(hexForLevel(3)).toBe("#26a641");
     expect(hexForLevel(4)).toBe("#39d353");
+  });
+});
+
+describe("PRESETS", () => {
+  test("every preset has a known base theme and 6-digit hex colors", () => {
+    for (const preset of Object.values(PRESETS)) {
+      expect(preset.theme in PALETTES).toBe(true);
+      expect(preset.bg).toMatch(/^#[0-9a-f]{6}$/);
+      expect(preset.color).toMatch(/^#[0-9a-f]{6}$/);
+    }
+  });
+
+  test("no preset shadows the built-in light theme", () => {
+    expect(Object.hasOwn(PRESETS, "light")).toBe(false);
+    expect(Object.hasOwn(PRESETS, "dark")).toBe(false);
   });
 });
 

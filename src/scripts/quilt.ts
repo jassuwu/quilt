@@ -1,4 +1,5 @@
 import { ContributionsError, fetchContributions } from "../lib/contributions";
+import { PRESETS } from "../lib/levels";
 import { mergeContributions } from "../lib/merge";
 import { MAX_ACCOUNTS, parseUsernames } from "../lib/parse";
 import { renderQuiltSvg } from "../lib/svg";
@@ -26,6 +27,9 @@ const yearsEl = document.querySelector<HTMLElement>("#quilt-years");
 const embedPreview = document.querySelector<HTMLElement>(
   "#quilt-embed-preview",
 );
+const embedPresets = document.querySelector<HTMLElement>(
+  "#quilt-embed-presets",
+);
 const embedColor =
   document.querySelector<HTMLInputElement>("#quilt-embed-color");
 const embedBg = document.querySelector<HTMLInputElement>("#quilt-embed-bg");
@@ -40,6 +44,9 @@ const shareBtn = document.querySelector<HTMLButtonElement>("#quilt-share");
 let activeUsernames: string[] = [];
 let activeYear: Year = "last";
 let embedFmt: EmbedFmt = "md";
+// when set, the snippet carries ?theme=<name> instead of hex params —
+// the named form is what reads well (and spreads) in READMEs
+let activePreset: string | null = null;
 let currentQuilt: Quilt | null = null;
 // supersession counter — the last-started run owns the DOM
 let runSeq = 0;
@@ -139,7 +146,25 @@ function embedUrlWith(opts: {
 }
 
 function embedUrl(): string {
+  if (activePreset) {
+    const q = [`theme=${activePreset}`];
+    if (activeYear !== "last") q.push(`y=${activeYear}`);
+    return `${EMBED_ORIGIN}/u/${activeUsernames.join(",")}.svg?${q.join("&")}`;
+  }
   return embedUrlWith(embedOptions());
+}
+
+function renderPresets(): void {
+  if (!embedPresets) return;
+  embedPresets.innerHTML = Object.entries(PRESETS)
+    .map(([name, preset]) => {
+      const cls =
+        name === activePreset
+          ? "bg-surface text-text"
+          : "text-muted hover:text-text";
+      return `<button type="button" data-preset="${name}" class="inline-flex items-center rounded-md px-2.5 py-1 transition ${cls}"><span class="mr-1.5 inline-block size-2 rounded-full" style="background:${preset.color}"></span>${name}</button>`;
+    })
+    .join("");
 }
 
 function embedSnippet(): string {
@@ -190,6 +215,7 @@ function refreshEmbed(): void {
       embed: true,
     });
   }
+  renderPresets();
   renderEmbed();
 }
 
@@ -320,9 +346,27 @@ embedTabs?.addEventListener("click", (event) => {
   renderEmbed();
 });
 
-embedColor?.addEventListener("input", refreshEmbed);
-embedBg?.addEventListener("input", refreshEmbed);
+embedPresets?.addEventListener("click", (event) => {
+  const button = (event.target as HTMLElement).closest("button[data-preset]");
+  if (!button) return;
+  const name = button.getAttribute("data-preset");
+  const preset = name ? PRESETS[name] : undefined;
+  if (!name || !preset) return;
+  activePreset = name;
+  // the pickers mirror the preset so the live preview just works
+  if (embedColor) embedColor.value = preset.color;
+  if (embedBg) embedBg.value = preset.bg;
+  refreshEmbed();
+});
+
+const clearPreset = () => {
+  activePreset = null;
+  refreshEmbed();
+};
+embedColor?.addEventListener("input", clearPreset);
+embedBg?.addEventListener("input", clearPreset);
 embedReset?.addEventListener("click", () => {
+  activePreset = null;
   if (embedColor) embedColor.value = DEFAULT_COLOR;
   if (embedBg) embedBg.value = DEFAULT_BG;
   refreshEmbed();

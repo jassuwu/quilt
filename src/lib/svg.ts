@@ -78,25 +78,36 @@ const toHex = (rgb: number[]): string =>
 const mix = (a: number[], b: number[], t: number): number[] =>
   [0, 1, 2].map((i) => a[i] + (b[i] - a[i]) * t);
 
-/** Derive a 5-step ramp (empty + levels 1–4) from a base color, over the theme bg. */
-function rampFromColor(color: string, theme: Theme): readonly string[] {
+/** Derive a 5-step ramp (empty + levels 1–4) from a base color, over the actual bg. */
+function rampFromColor(
+  color: string,
+  theme: Theme,
+  bgHex: string,
+): readonly string[] {
+  const base = PALETTES[theme];
   const c = parseHex(color);
-  const bg = parseHex(PALETTES[theme].bg);
-  if (!c || !bg) return PALETTES[theme].levels;
-  return [
-    PALETTES[theme].levels[0],
-    ...[0.4, 0.6, 0.8, 1].map((t) => toHex(mix(bg, c, t))),
-  ];
+  const bg = parseHex(bgHex);
+  if (!c || !bg) return base.levels;
+  // empty patches: the stock tone on the stock bg; on a custom bg, a whisper
+  // of ink over it — the stock tone would read as holes.
+  const ink = parseHex(theme === "dark" ? "#ffffff" : "#000000") as number[];
+  const level0 =
+    bgHex.toLowerCase() === base.bg.toLowerCase()
+      ? base.levels[0]
+      : toHex(mix(bg, ink, 0.07));
+  return [level0, ...[0.4, 0.6, 0.8, 1].map((t) => toHex(mix(bg, c, t)))];
 }
 
 function resolvePalette(options: RenderOptions) {
   const theme = options.theme ?? "dark";
   const base = PALETTES[theme];
+  const bg =
+    options.bg && isHexColor(options.bg) ? withHash(options.bg) : base.bg;
   return {
-    bg: options.bg && isHexColor(options.bg) ? withHash(options.bg) : base.bg,
+    bg,
     levels:
       options.color && isHexColor(options.color)
-        ? rampFromColor(options.color, theme)
+        ? rampFromColor(options.color, theme, bg)
         : base.levels,
     muted: base.muted,
   };

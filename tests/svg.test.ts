@@ -44,6 +44,17 @@ describe("renderQuiltSvg", () => {
     expect(svg).not.toContain("max-width:100%"); // fixed size for <img>
   });
 
+  test("custom color ramps over the custom bg, not the stock canvas", () => {
+    const svg = renderQuiltSvg(quilt, {
+      embed: true,
+      bg: "282a36",
+      color: "bd93f9",
+    });
+    expect(svg).toContain("#282a36"); // card bg
+    expect(svg).toContain("#bd93f9"); // level-4 = the base color itself
+    expect(svg).not.toContain("#161b22"); // stock empty tone would read as holes
+  });
+
   test("embed footer carries the quilt.jass.gg attribution", () => {
     const svg = renderQuiltSvg(quilt, { embed: true });
     expect(svg).toContain("quilt.jass.gg");
