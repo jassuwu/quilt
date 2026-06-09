@@ -1,3 +1,4 @@
+import { track } from "@vercel/analytics";
 import { ContributionsError, fetchContributions } from "../lib/contributions";
 import { PRESETS } from "../lib/levels";
 import { mergeContributions } from "../lib/merge";
@@ -298,6 +299,9 @@ async function run(usernames: string[], year: Year): Promise<void> {
     return;
   }
 
+  // the funnel: stitch → copy embed / copy link / download png
+  track("stitch", { accounts: sources.length });
+
   currentQuilt = mergeContributions(sources);
   renderStats(currentQuilt);
   if (graphEl) {
@@ -399,11 +403,14 @@ function copyWithFeedback(
 }
 
 embedCopy?.addEventListener("click", () => {
-  if (embedCopy) copyWithFeedback(embedCopy, embedSnippet(), "copy");
+  if (!embedCopy) return;
+  track("copy embed", { format: embedFmt, theme: activePreset ?? "custom" });
+  copyWithFeedback(embedCopy, embedSnippet(), "copy");
 });
 
 downloadBtn?.addEventListener("click", () => {
   if (!currentQuilt || !downloadBtn) return;
+  track("download png", { theme: activePreset ?? "custom" });
   // rasterize the embed card client-side: SVG → <img> → canvas → png.
   // the card is self-contained (system font, no external refs), so the
   // canvas stays untainted.
@@ -445,6 +452,7 @@ downloadBtn?.addEventListener("click", () => {
 
 shareBtn?.addEventListener("click", () => {
   if (!shareBtn) return;
+  track("copy link");
   // the address bar already holds the shareable ?u= state — surface it
   if (navigator.share && matchMedia("(pointer: coarse)").matches) {
     void navigator.share({ url: location.href }).catch(() => {});
