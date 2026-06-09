@@ -14,7 +14,10 @@ quilt of green — so your real activity finally looks as busy as it is.
 ![built with astro](https://img.shields.io/badge/built%20with-Astro%206-39d353?style=flat-square)
 ![data](https://img.shields.io/badge/data-github--contributions--api-e8a87c?style=flat-square)
 
-<img src="./docs/assets/readme/quilt-poster.png" width="900" alt="quilt — many accounts merged into one green contribution grid" />
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="./docs/assets/readme/quilt-poster.png" />
+  <img src="./docs/assets/readme/quilt-header.gif?v=1" width="900" alt="quilt — scattered GitHub accounts merging into one contribution graph" />
+</picture>
 
 _one dev. every account. one quilt._
 
