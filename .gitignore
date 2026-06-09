@@ -32,3 +32,6 @@ public/og/*
 
 # remotion renders
 remotion/out/
+
+# generated SFX (regenerate: cd remotion && bun run sfx)
+remotion/public/sfx/
