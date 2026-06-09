@@ -215,8 +215,9 @@ export function renderQuiltSvg(
     }
 
     // the attribution is the only path from a README back to the product —
-    // camo strips the link, but the visible domain is the point.
-    const domain = `<a href="https://quilt.jass.gg/?u=${quilt.usernames.join(",")}"><tspan>${domainText}</tspan></a>`;
+    // camo strips the link, but the visible domain is the point. (separator
+    // lives outside the <a>: renderers trim leading space inside anchors.)
+    const domain = `<tspan> · </tspan><a href="https://quilt.jass.gg/?u=${quilt.usernames.join(",")}"><tspan>quilt.jass.gg</tspan></a>`;
     const summary = `<text x="0" y="${fy + 9}" font-size="11" fill="${muted}">${links}${extras}${domain}</text>`;
     let legend = `<text x="${legendX}" y="${fy + 9}" font-size="11" fill="${muted}">less</text>`;
     for (let i = 0; i < 5; i++) {

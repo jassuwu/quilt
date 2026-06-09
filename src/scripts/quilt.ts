@@ -28,8 +28,8 @@ const yearsEl = document.querySelector<HTMLElement>("#quilt-years");
 const embedPreview = document.querySelector<HTMLElement>(
   "#quilt-embed-preview",
 );
-const embedPresets = document.querySelector<HTMLElement>(
-  "#quilt-embed-presets",
+const embedTheme = document.querySelector<HTMLSelectElement>(
+  "#quilt-embed-theme",
 );
 const embedColor =
   document.querySelector<HTMLInputElement>("#quilt-embed-color");
@@ -157,17 +157,15 @@ function embedUrl(): string {
   return embedUrlWith(embedOptions());
 }
 
-function renderPresets(): void {
-  if (!embedPresets) return;
-  embedPresets.innerHTML = Object.entries(PRESETS)
-    .map(([name, preset]) => {
-      const cls =
-        name === activePreset
-          ? "bg-surface text-text"
-          : "text-muted hover:text-text";
-      return `<button type="button" data-preset="${name}" class="inline-flex items-center rounded-md px-2.5 py-1 transition ${cls}"><span class="mr-1.5 inline-block size-2 rounded-full" style="background:${preset.color}"></span>${name}</button>`;
-    })
-    .join("");
+// one quiet control instead of a wall of chips — "custom" only appears
+// once the pickers have been touched
+function populateThemeSelect(): void {
+  if (!embedTheme) return;
+  embedTheme.innerHTML = [
+    `<option value="">default</option>`,
+    ...Object.keys(PRESETS).map((k) => `<option value="${k}">${k}</option>`),
+    `<option value="custom" hidden>custom</option>`,
+  ].join("");
 }
 
 function embedSnippet(): string {
@@ -225,7 +223,6 @@ function refreshEmbed(): void {
       svg.style.height = "auto";
     }
   }
-  renderPresets();
   renderEmbed();
 }
 
@@ -359,27 +356,27 @@ embedTabs?.addEventListener("click", (event) => {
   renderEmbed();
 });
 
-embedPresets?.addEventListener("click", (event) => {
-  const button = (event.target as HTMLElement).closest("button[data-preset]");
-  if (!button) return;
-  const name = button.getAttribute("data-preset");
-  const preset = name ? PRESETS[name] : undefined;
-  if (!name || !preset) return;
-  activePreset = name;
+embedTheme?.addEventListener("change", () => {
+  const preset = Object.hasOwn(PRESETS, embedTheme.value)
+    ? PRESETS[embedTheme.value]
+    : undefined;
+  activePreset = preset ? embedTheme.value : null;
   // the pickers mirror the preset so the live preview just works
-  if (embedColor) embedColor.value = preset.color;
-  if (embedBg) embedBg.value = preset.bg;
+  if (embedColor) embedColor.value = preset?.color ?? DEFAULT_COLOR;
+  if (embedBg) embedBg.value = preset?.bg ?? DEFAULT_BG;
   refreshEmbed();
 });
 
 const clearPreset = () => {
   activePreset = null;
+  if (embedTheme) embedTheme.value = "custom";
   refreshEmbed();
 };
 embedColor?.addEventListener("input", clearPreset);
 embedBg?.addEventListener("input", clearPreset);
 embedReset?.addEventListener("click", () => {
   activePreset = null;
+  if (embedTheme) embedTheme.value = "";
   if (embedColor) embedColor.value = DEFAULT_COLOR;
   if (embedBg) embedBg.value = DEFAULT_BG;
   refreshEmbed();
@@ -460,6 +457,8 @@ shareBtn?.addEventListener("click", () => {
   }
   copyWithFeedback(shareBtn, location.href, "copy link");
 });
+
+populateThemeSelect();
 
 // Hydrate from a shared ?u=a,b&y=2024 link.
 const params = new URLSearchParams(location.search);
