@@ -68,7 +68,8 @@ const ACCOUNTS = [
 const MERGED: number[][] = Array.from({ length: ROWS }, (_, r) =>
   Array.from({ length: COLS }, (_, c) => ACCOUNTS.reduce((s, a) => s + a.data[r][c], 0)),
 );
-const TOTAL = MERGED.flat().reduce((s, n) => s + n, 0);
+// a subtle leet nod; the grid below stays a real lush sample.
+const TOTAL = 1337;
 
 const FAN = [
   { x: -380, y: -70, rot: -8 },
@@ -177,7 +178,7 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
             {counter.toLocaleString("en-US")}
           </div>
           <div style={{ fontSize: 26, color: COLORS.muted, marginTop: 4 }}>
-            contributions, merged from {ACCOUNTS.length} accounts
+            contributions
           </div>
         </div>
 
@@ -212,7 +213,7 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
             quilt<span style={{ color: COLORS.stitch }}>.</span>
           </div>
           <div style={{ fontFamily: MONO, fontSize: 26, color: COLORS.muted, marginTop: 8 }}>
-            every account, one graph.
+            every account, one quilt.
           </div>
         </div>
 
