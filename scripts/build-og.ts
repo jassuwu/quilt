@@ -6,6 +6,7 @@ import { C } from "./art";
 
 const W = 1200;
 const H = 630;
+// mirror of src/lib/levels.ts LEVEL_HEX (index 0 = empty/surface)
 const RAMP = ["#161b22", C.l1, C.l2, C.l3, C.l4];
 
 /** Seeded PRNG so the sample card is byte-stable across regenerations. */
@@ -54,7 +55,7 @@ const font = `font-family="Helvetica, Arial, sans-serif"`;
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <rect width="${W}" height="${H}" fill="${C.bg}"/>
   <text x="72" y="130" ${font} font-size="88" font-weight="700" fill="#e6edf3">quilt<tspan fill="${C.stitch}">.</tspan></text>
-  <text x="76" y="178" ${font} font-size="30" fill="#7d8590">every GitHub account, stitched into one green graph.</text>
+  <text x="76" y="178" ${font} font-size="30" fill="#7d8590">every GitHub account, stitched into one quilt of green.</text>
   <rect x="${panelX}" y="${panelY}" width="${panelW}" height="${panelH}" rx="20" fill="#161b22" stroke="#21262d"/>
   ${sampleGrid()}
   <text x="72" y="574" ${font} font-size="28" fill="#e6edf3">12,431 contributions · 4 accounts · 318-day streak</text>
@@ -71,4 +72,4 @@ await writeFile(
   join(outDir, "default.png"),
   Buffer.from(resvg.render().asPng()),
 );
-console.log("✓ public/og/default.png");
+console.log("wrote public/og/default.png");

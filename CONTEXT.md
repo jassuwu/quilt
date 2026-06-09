@@ -8,7 +8,7 @@ single, busy graph it really is.
 
 Controlled vocabulary. Use these terms exactly; avoid the listed synonyms.
 
-- **Quilt** — the merged contribution grid (both the product and the artifact it renders). _Avoid_: dashboard, chart, heatmap.
+- **Quilt** — the merged contribution grid (both the product and the artifact it renders). _Avoid in user-facing copy_: grid, graph (use "contribution graph" only for the per-account source), dashboard, chart, heatmap.
 - **Patch** — a single day cell in the quilt. _Avoid_: box, tile, square (in prose).
 - **Account** — one GitHub username being merged. _Avoid_: user, profile, handle (in code).
 - **Merge** — summing each day's contribution count across accounts. _Avoid_: combine, aggregate, join.

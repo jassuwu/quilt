@@ -94,7 +94,7 @@ export async function fetchContributions(
     }
     if (!res.ok) {
       throw new ContributionsError(
-        `Couldn't load "${name}" (HTTP ${res.status})`,
+        `couldn't load "${name}" (HTTP ${res.status})`,
         name,
         res.status,
       );
