@@ -17,6 +17,7 @@ import {
   EMBED_START,
   FAN_END,
   GATHER_END,
+  HERO_DURATION,
   REVEAL_START,
   SLAM,
   SPIN_END,
@@ -133,7 +134,7 @@ function themeAt(frame: number): { from: DemoTheme; to: DemoTheme; t: number } {
   let from = HOME_THEME;
   for (const stop of stops) {
     if (frame >= stop.at) {
-      const t = interpolate(frame, [stop.at, stop.at + 8], [0, 1], clamp);
+      const t = interpolate(frame, [stop.at, stop.at + 12], [0, 1], clamp);
       if (t < 1) {
         return { from, to: stop.theme, t: easeInOut(t) };
       }
@@ -146,10 +147,13 @@ function themeAt(frame: number): { from: DemoTheme; to: DemoTheme; t: number } {
 const lerpColor = (t: number, a: string, b: string) =>
   t >= 1 ? b : t <= 0 ? a : interpolateColors(t, [0, 1], [a, b]);
 
-export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
-  sound = false,
-  showCta = false,
-}) => {
+export const QuiltShow: React.FC<{
+  sound?: boolean;
+  showCta?: boolean;
+  /** GIF delivery: keep the act-I push-in but lock the post-slam creep —
+   * invisible at README size, expensive in GIF bytes and dither noise. */
+  lockCamera?: boolean;
+}> = ({ sound = false, showCta = false, lockCamera = false }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -188,6 +192,16 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
   const shakeY = shakeAt(frame, SLAM, 4);
   const flash = frame >= SLAM ? 0.06 * Math.exp(-(frame - SLAM) * 0.55) : 0;
   const punch = 1 + bumpAt(frame, SLAM, 0.04);
+  // the camera never sits still: a slow push-in that lands exactly on the
+  // impact, then a patient creep for the rest of the film
+  const camera =
+    frame < SLAM
+      ? interpolate(frame, [0, SLAM], [1.05, 1], clamp)
+      : lockCamera
+        ? 1
+        : interpolate(frame, [SLAM, HERO_DURATION], [1, 1.03], clamp);
+  // the quilt rings with the ding — the material reacts to the note
+  const dingRing = bumpAt(frame, SPIN_END, 1);
   // the impact ripples THROUGH the quilt: a bright wavefront radiating from
   // the contact point, riding just ahead of the bloom
   const rippleFront = interpolate(frame, [SLAM, DENSIFY_END], [0, 1.15], clamp);
@@ -204,19 +218,37 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
       frame >= SLAM && frame < DENSIFY_END + 4
         ? Math.exp(-Math.pow((rad - rippleFront) * 9, 2))
         : 0;
-    const glowA = Math.max(bump * 0.55, edge * 0.5);
+    // theme changes wipe across the quilt L→R — the same wavefront language
+    // as the impact, never a uniform crossfade
+    const wipeFront = themeT * (COLS + 10) - 5;
+    const wipeT = themeT >= 1 ? 1 : interpolate(c, [wipeFront - 5, wipeFront], [1, 0], clamp);
+    const wipeEdge =
+      themeT > 0 && themeT < 1 ? Math.exp(-Math.pow((c - wipeFront) / 2.2, 2)) : 0;
+    const glowA = Math.max(bump * 0.55, edge * 0.5, dingRing * 0.22, wipeEdge * 0.3);
+    const glowHex = wipeEdge > Math.max(bump, edge) ? themeTo.color : "#39d353";
     return {
-      color: lerpColor(themeT, themeFrom.levels[level], themeTo.levels[level]),
+      color: lerpColor(wipeT, themeFrom.levels[level], themeTo.levels[level]),
       opacity: mergedAppear * (0.35 + 0.65 * pop),
-      scale: 0.72 + 0.28 * pop + 0.22 * bump + 0.14 * edge,
+      scale:
+        0.72 + 0.28 * pop + 0.22 * bump + 0.14 * edge + 0.02 * dingRing + 0.07 * wipeEdge,
       glow:
         glowA > 0.14 && level >= 2
-          ? `0 0 ${Math.max(bump, edge) * 11}px rgba(57,211,83,${glowA})`
+          ? `0 0 ${Math.max(bump, edge, wipeEdge) * 11}px ${glowHex}${Math.round(glowA * 255)
+              .toString(16)
+              .padStart(2, "0")}`
           : "none",
     };
   };
 
-  const themeName = themeT < 0.5 ? themeFrom.name : themeTo.name;
+  // the ?theme= param types itself in as the wipe crosses the quilt
+  const paramTarget = themeTo.name ? `?theme=${themeTo.name}` : "";
+  const paramPrev = themeFrom.name ? `?theme=${themeFrom.name}` : "";
+  const themeParam =
+    themeT >= 1
+      ? paramTarget
+      : paramTarget
+        ? paramTarget.slice(0, Math.round(themeT * 1.6 * paramTarget.length))
+        : paramPrev.slice(0, Math.round((1 - themeT * 1.6) * paramPrev.length));
   const themeAccent = themeT < 0.5 ? themeFrom.color : themeTo.color;
 
   return (
@@ -262,6 +294,7 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
           {[...THEME_STEPS, THEME_HOME].map((at, i) => (
             <Sequence key={at} from={at}>
               <Audio src={staticFile(`sfx/step${i + 1}.wav`)} volume={0.34} />
+              <Audio src={staticFile("sfx/flip.wav")} volume={0.3} />
             </Sequence>
           ))}
           {showCta && (
@@ -280,16 +313,16 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
         }}
       />
 
-      <AbsoluteFill style={{ transform: `translate(${shakeX}px, ${shakeY}px) scale(${punch})` }}>
+      <AbsoluteFill style={{ transform: `translate(${shakeX}px, ${shakeY}px) scale(${punch * camera})` }}>
         {/* top zone: number → wordmark */}
         <div style={{ position: "absolute", top: 108, left: 0, right: 0, textAlign: "center", opacity: countIn * interpolate(frame, [WORD_START - 6, WORD_START + 6], [1, 0], clamp) }}>
-          <div style={{ fontFamily: MONO, fontSize: 112, fontWeight: 700, letterSpacing: -3, fontVariantNumeric: "tabular-nums", transform: `scale(${countPop})` }}>
+          <div style={{ fontFamily: MONO, fontSize: 112, fontWeight: 700, letterSpacing: -3, fontVariantNumeric: "tabular-nums", transform: `scale(${countPop})`, textShadow: dingRing > 0.02 ? `0 0 ${36 * dingRing}px rgba(57,211,83,${0.45 * dingRing})` : "none" }}>
             {count.toLocaleString("en-US")}
           </div>
           <div style={{ fontSize: 26, color: COLORS.muted, marginTop: 4 }}>contributions</div>
         </div>
         <div style={{ position: "absolute", top: 132, left: 0, right: 0, textAlign: "center", opacity: brandT, transform: `translateY(${(1 - brandT) * 14}px)` }}>
-          <div style={{ fontSize: 84, fontWeight: 800, letterSpacing: -2 }}>
+          <div style={{ fontSize: 84, fontWeight: 800, letterSpacing: 6 - 8 * brandT }}>
             quilt<span style={{ color: COLORS.stitch }}>.</span>
           </div>
           {/* the seam sews itself under the wordmark */}
@@ -308,24 +341,41 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
         <div style={{ position: "absolute", top: 360, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
           <div style={{ position: "relative", width: GRID_W, height: GRID_H, transform: `scale(${stackScale + themePulse})` }}>
             {ACCOUNTS.map((acc, i) => {
-              const appear = ease(
-                interpolate(frame, [i * CARD_STAGGER, i * CARD_STAGGER + 20], [0, 1], clamp),
-              );
+              const start = i * CARD_STAGGER;
+              const appear = ease(interpolate(frame, [start, start + 20], [0, 1], clamp));
               // the cards die in the flash, not before it
               const fade = interpolate(frame, [SLAM, SLAM + 4], [1, 0], clamp);
               const x = FAN[i].x * (1 - gatherT);
               const y = FAN[i].y * (1 - gatherT) + (1 - appear) * 60;
               const rot = FAN[i].rot * (1 - gatherT);
               const cardScale = 0.96 + 0.04 * appear;
+              // the label types itself, like a username going into the input
+              const typed = Math.round(
+                interpolate(frame, [start + 2, start + 16], [0, acc.label.length], clamp),
+              );
+              const cursorOn = frame < start + 22 && frame % 8 < 5;
               return (
                 <div
                   key={acc.label}
                   style={{ position: "absolute", inset: 0, opacity: appear * fade, transform: `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${cardScale})`, transformOrigin: "center" }}
                 >
-                  <div style={{ position: "absolute", top: -44, left: 0, fontFamily: MONO, fontSize: 22, color: COLORS.muted, opacity: 1 - gatherT }}>
-                    {acc.label}
+                  <div style={{ position: "absolute", top: -44, left: "50%", transform: "translateX(-50%)", fontFamily: MONO, fontSize: 22, color: COLORS.muted, opacity: 1 - gatherT, whiteSpace: "nowrap" }}>
+                    {acc.label.slice(0, typed)}
+                    {cursorOn && <span style={{ color: COLORS.stitch }}>▍</span>}
                   </div>
-                  <CellGrid cell={(r, c) => ({ color: hexForLevel(ownLevel(acc.data[r][c])) })} />
+                  <CellGrid
+                    cell={(r, c) => {
+                      // each account stitches itself together — a fast
+                      // diagonal wave of patches, the material assembling
+                      const wave = start + 2 + c * 0.16 + r * 0.5;
+                      const cellT = interpolate(frame, [wave, wave + 5], [0, 1], clamp);
+                      return {
+                        color: hexForLevel(ownLevel(acc.data[r][c])),
+                        opacity: cellT,
+                        scale: 0.4 + 0.6 * cellT,
+                      };
+                    }}
+                  />
                 </div>
               );
             })}
@@ -346,15 +396,25 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
           <div style={{ display: "inline-block", padding: "16px 24px", borderRadius: 14, background: surface, border: `1px solid rgba(255,255,255,0.08)`, fontFamily: MONO, fontSize: 28, color: COLORS.text }}>
             {"![my quilt]("}
             <span style={{ color: COLORS.stitch }}>quilt.jass.gg/u/you.svg</span>
-            <span style={{ color: themeAccent }}>{themeName ? `?theme=${themeName}` : ""}</span>
+            <span style={{ color: themeAccent }}>{themeParam}</span>
             {")"}
           </div>
         </div>
 
         {showCta && (
           <div style={{ position: "absolute", top: 820, left: 0, right: 0, textAlign: "center", opacity: Math.min(1, ctaT * 1.4), transform: `scale(${0.9 + 0.1 * ctaT})` }}>
-            <span style={{ display: "inline-block", padding: "14px 28px", borderRadius: 999, background: COLORS.stitch, color: COLORS.bg, fontFamily: MONO, fontSize: 26, fontWeight: 700 }}>
+            <span style={{ position: "relative", display: "inline-block", padding: "14px 28px", borderRadius: 999, background: COLORS.stitch, color: COLORS.bg, fontFamily: MONO, fontSize: 26, fontWeight: 700, overflow: "hidden" }}>
               stitch yours · quilt.jass.gg
+              {/* one shine pass, right after the pill lands */}
+              <span
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.35) 50%, transparent 62%)",
+                  transform: `translateX(${interpolate(frame, [CTA_START + 12, CTA_START + 26], [-110, 110], clamp)}%)`,
+                }}
+              />
             </span>
           </div>
         )}

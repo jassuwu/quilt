@@ -365,6 +365,24 @@ function step(freq: number): Stereo {
   return reverb(muffle(out, 0.22), 0.22, 1.2);
 }
 
+// the theme wipe crossing the quilt — a soft swish panning L→R with it
+function flip(): Stereo {
+  const dur = 0.42;
+  const out = stereo(dur);
+  const rng = mulberry32(17);
+  let lp = 0;
+  for (let i = 0; i < out.l.length; i++) {
+    const tn = i / out.l.length;
+    lp += (rng() * 2 - 1 - lp) * (0.08 + 0.1 * tn);
+    const env = Math.sin(Math.PI * tn) ** 1.5;
+    const s = lp * env * 0.6;
+    const th = (tn * Math.PI) / 2; // travels with the wavefront
+    out.l[i] = s * Math.cos(th);
+    out.r[i] = s * Math.sin(th);
+  }
+  return reverb(muffle(out, 0.16), 0.12, 0.8);
+}
+
 // the cadence — A major. minor film, major ending.
 function resolve(): Stereo {
   const out = stereo(2.4);
@@ -399,6 +417,7 @@ const sfx: Record<string, Stereo> = {
   step2: step(E4),
   step3: step(G4),
   step4: step(A3),
+  flip: flip(),
   resolve: resolve(),
 };
 for (const [name, samples] of Object.entries(sfx)) {
