@@ -21,4 +21,22 @@ describe("parseUsernames", () => {
     expect(parseUsernames("")).toEqual([]);
     expect(parseUsernames("  ,  ")).toEqual([]);
   });
+
+  test("accepts @handles and github.com profile URLs", () => {
+    expect(parseUsernames("@jassuwu")).toEqual(["jassuwu"]);
+    expect(parseUsernames("https://github.com/jassuwu")).toEqual(["jassuwu"]);
+    expect(parseUsernames("github.com/jassuwu/")).toEqual(["jassuwu"]);
+    expect(parseUsernames("https://github.com/jassuwu?tab=repositories")).toEqual(
+      ["jassuwu"],
+    );
+    expect(parseUsernames("www.github.com/torvalds https://github.com/jassuwu")).toEqual(
+      ["torvalds", "jassuwu"],
+    );
+  });
+
+  test("normalized duplicates still dedupe", () => {
+    expect(parseUsernames("@jassuwu, https://github.com/JASSUWU")).toEqual([
+      "jassuwu",
+    ]);
+  });
 });
