@@ -28,7 +28,7 @@
     "upgrade": "remotionb upgrade",
     "lint": "eslint src && tsc",
     "sfx": "bun run scripts/build-sfx.ts",
-    "poster": "remotionb still src/index.ts hero out/quilt-poster.png --frame=205",
+    "poster": "remotionb still src/index.ts hero out/quilt-poster.png --frame=250",
     "render:hero": "remotionb render src/index.ts hero out/quilt-hero.mp4",
     "render:social": "bun run sfx && remotionb render src/index.ts social out/quilt-social.mp4",
     "render:all": "bun run poster && bun run render:hero && bun run render:social"

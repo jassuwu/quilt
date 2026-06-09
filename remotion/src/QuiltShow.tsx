@@ -13,6 +13,7 @@ import {
 import {
   CTA_START,
   DENSIFY_END,
+  EMBED_START,
   FAN_END,
   REVEAL_START,
   SLAM,
@@ -117,6 +118,7 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
   const counterOpacity = interpolate(frame, [SPIN_START - 6, SPIN_START + 6], [0, 1], clamp);
   const wm = spring({ frame: frame - WORD_START, fps, config: { damping: 200 } });
   const cta = interpolate(frame, [CTA_START, CTA_START + 26], [0, 1], clamp);
+  const embedIn = interpolate(frame, [EMBED_START, EMBED_START + 22], [0, 1], clamp);
 
   const shakeX = shakeAt(frame, SLAM, 8) + shakeAt(frame, REVEAL_START, 6);
   const shakeY = shakeAt(frame, SLAM, 4) + shakeAt(frame, REVEAL_START, 4);
@@ -146,27 +148,30 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
         <>
           {[0, 8, 16].map((f) => (
             <Sequence key={f} from={f}>
-              <Audio src={staticFile("sfx/whoosh.wav")} volume={0.45} />
+              <Audio src={staticFile("sfx/whoosh.wav")} volume={0.35} />
             </Sequence>
           ))}
           <Sequence from={FAN_END}>
-            <Audio src={staticFile("sfx/whoosh.wav")} volume={0.8} />
+            <Audio src={staticFile("sfx/whoosh.wav")} volume={0.55} />
           </Sequence>
           <Sequence from={SPIN_START}>
-            <Audio src={staticFile("sfx/spin.wav")} volume={0.4} />
+            <Audio src={staticFile("sfx/spin.wav")} volume={0.5} />
           </Sequence>
           <Sequence from={SPIN_END}>
-            <Audio src={staticFile("sfx/ding.wav")} volume={0.7} />
+            <Audio src={staticFile("sfx/ding.wav")} volume={0.75} />
           </Sequence>
           <Sequence from={REVEAL_START}>
-            <Audio src={staticFile("sfx/boom.wav")} volume={0.75} />
+            <Audio src={staticFile("sfx/boom.wav")} volume={0.5} />
           </Sequence>
           <Sequence from={REVEAL_START + 8}>
-            <Audio src={staticFile("sfx/sparkle.wav")} volume={0.45} />
+            <Audio src={staticFile("sfx/sparkle.wav")} volume={0.4} />
+          </Sequence>
+          <Sequence from={EMBED_START}>
+            <Audio src={staticFile("sfx/ding.wav")} volume={0.4} />
           </Sequence>
           {showCta && (
             <Sequence from={CTA_START}>
-              <Audio src={staticFile("sfx/tada.wav")} volume={0.6} />
+              <Audio src={staticFile("sfx/tada.wav")} volume={0.55} />
             </Sequence>
           )}
         </>
@@ -208,12 +213,30 @@ export const QuiltShow: React.FC<{ sound?: boolean; showCta?: boolean }> = ({
           </div>
         </div>
 
-        <div style={{ position: "absolute", top: 648, left: 0, right: 0, textAlign: "center", opacity: wm, transform: `translateY(${(1 - wm) * 16}px)` }}>
+        <div style={{ position: "absolute", top: 620, left: 0, right: 0, textAlign: "center", opacity: wm, transform: `translateY(${(1 - wm) * 16}px)` }}>
           <div style={{ fontSize: 92, fontWeight: 800, letterSpacing: -2 }}>
             quilt<span style={{ color: COLORS.stitch }}>.</span>
           </div>
-          <div style={{ fontFamily: MONO, fontSize: 26, color: COLORS.muted, marginTop: 8 }}>
-            every account, one quilt.
+        </div>
+
+        {/* tagline → embed snippet crossfade */}
+        <div
+          style={{ position: "absolute", top: 742, left: 0, right: 0, textAlign: "center", opacity: wm * (1 - embedIn), fontFamily: MONO, fontSize: 26, color: COLORS.muted }}
+        >
+          every account, one quilt.
+        </div>
+        <div
+          style={{ position: "absolute", top: 728, left: 0, right: 0, textAlign: "center", opacity: embedIn, transform: `translateY(${(1 - embedIn) * 12}px)` }}
+        >
+          <div style={{ fontFamily: MONO, fontSize: 22, color: COLORS.muted, marginBottom: 14 }}>
+            embed it anywhere — readme, portfolio, docs
+          </div>
+          <div
+            style={{ display: "inline-block", padding: "16px 24px", borderRadius: 14, background: COLORS.surface, border: `1px solid ${COLORS.seam}`, fontFamily: MONO, fontSize: 28, color: COLORS.text }}
+          >
+            {"![my quilt]("}
+            <span style={{ color: COLORS.stitch }}>quilt.jass.gg/u/you.svg</span>
+            {")"}
           </div>
         </div>
 
