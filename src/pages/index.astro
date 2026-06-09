@@ -78,31 +78,61 @@ import Layout from "../layouts/Layout.astro";
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 border-t border-seam pt-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <p class="text-sm text-muted">
-            embed your live quilt — drop it in your README or portfolio, it
-            keeps itself current.
-          </p>
-          <div id="quilt-embed-tabs" class="flex gap-1 text-xs"></div>
-        </div>
-        <div class="flex items-stretch gap-2">
-          <code
-            id="quilt-embed-code"
-            class="flex-1 overflow-x-auto whitespace-nowrap rounded-lg border border-seam bg-surface px-3 py-2.5 font-mono text-sm text-text"
-          ></code>
+      <div class="flex flex-col gap-4 border-t border-seam pt-6">
+        <p class="text-sm text-muted">
+          embed your live quilt — drop it in your README or portfolio, it keeps
+          itself current. style it to match your site:
+        </p>
+
+        <div id="quilt-embed-preview" class="overflow-x-auto"></div>
+
+        <div
+          class="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted"
+        >
+          <label class="flex items-center gap-2">
+            graph
+            <input
+              id="quilt-embed-color"
+              type="color"
+              value="#39d353"
+              aria-label="graph color"
+              class="size-7 cursor-pointer rounded border border-seam bg-transparent"
+            />
+          </label>
+          <label class="flex items-center gap-2">
+            background
+            <input
+              id="quilt-embed-bg"
+              type="color"
+              value="#0d1117"
+              aria-label="background color"
+              class="size-7 cursor-pointer rounded border border-seam bg-transparent"
+            />
+          </label>
+          <span class="text-xs">(and pick a year above)</span>
           <button
-            id="quilt-embed-copy"
+            id="quilt-embed-reset"
             type="button"
-            class="shrink-0 rounded-lg bg-accent px-4 font-medium text-bg transition hover:brightness-110"
+            class="text-stitch underline-offset-2 hover:underline">reset</button
           >
-            copy
-          </button>
         </div>
-        <label class="flex w-fit items-center gap-2 text-xs text-muted">
-          <input id="quilt-embed-light" type="checkbox" class="accent-accent" />
-          light theme (for light READMEs)
-        </label>
+
+        <div class="flex flex-col gap-2">
+          <div id="quilt-embed-tabs" class="flex gap-1 text-xs"></div>
+          <div class="flex items-stretch gap-2">
+            <code
+              id="quilt-embed-code"
+              class="flex-1 overflow-x-auto whitespace-nowrap rounded-lg border border-seam bg-surface px-3 py-2.5 font-mono text-sm text-text"
+            ></code>
+            <button
+              id="quilt-embed-copy"
+              type="button"
+              class="shrink-0 rounded-lg bg-accent px-4 font-medium text-bg transition hover:brightness-110"
+            >
+              copy
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 

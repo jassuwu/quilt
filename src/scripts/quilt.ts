@@ -7,6 +7,8 @@ type Year = number | "last";
 type EmbedFmt = "md" | "html" | "url";
 
 const EMBED_ORIGIN = "https://quilt.jass.gg";
+const DEFAULT_COLOR = "#39d353";
+const DEFAULT_BG = "#0d1117";
 
 const form = document.querySelector<HTMLFormElement>("#quilt-form");
 const input = document.querySelector<HTMLInputElement>("#quilt-input");
@@ -15,16 +17,23 @@ const result = document.querySelector<HTMLElement>("#quilt-result");
 const statsEl = document.querySelector<HTMLElement>("#quilt-stats");
 const graphEl = document.querySelector<HTMLElement>("#quilt-graph");
 const yearsEl = document.querySelector<HTMLElement>("#quilt-years");
+const embedPreview = document.querySelector<HTMLElement>(
+  "#quilt-embed-preview",
+);
+const embedColor =
+  document.querySelector<HTMLInputElement>("#quilt-embed-color");
+const embedBg = document.querySelector<HTMLInputElement>("#quilt-embed-bg");
+const embedReset =
+  document.querySelector<HTMLButtonElement>("#quilt-embed-reset");
 const embedTabs = document.querySelector<HTMLElement>("#quilt-embed-tabs");
 const embedCode = document.querySelector<HTMLElement>("#quilt-embed-code");
 const embedCopy =
   document.querySelector<HTMLButtonElement>("#quilt-embed-copy");
-const embedLight =
-  document.querySelector<HTMLInputElement>("#quilt-embed-light");
 
 let activeUsernames: string[] = [];
 let activeYear: Year = "last";
 let embedFmt: EmbedFmt = "md";
+let currentQuilt: Quilt | null = null;
 
 function parseUsernames(raw: string): string[] {
   const seen = new Set<string>();
@@ -96,11 +105,38 @@ function renderYears(): void {
   yearsEl.classList.add("flex");
 }
 
+// ---- embed customizer ----
+
+function luminance(hex: string): number {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16) / 255;
+  const g = parseInt(h.slice(2, 4), 16) / 255;
+  const b = parseInt(h.slice(4, 6), 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function embedOptions(): {
+  theme: "light" | "dark";
+  color?: string;
+  bg?: string;
+} {
+  const color = embedColor?.value ?? DEFAULT_COLOR;
+  const bg = embedBg?.value ?? DEFAULT_BG;
+  return {
+    theme: luminance(bg) > 0.6 ? "light" : "dark",
+    color: color.toLowerCase() === DEFAULT_COLOR ? undefined : color,
+    bg: bg.toLowerCase() === DEFAULT_BG ? undefined : bg,
+  };
+}
+
 function embedUrl(): string {
-  const base = `${EMBED_ORIGIN}/u/${activeUsernames.join(",")}.svg`;
+  const opts = embedOptions();
   const q: string[] = [];
-  if (embedLight?.checked) q.push("theme=light");
+  if (opts.theme === "light") q.push("theme=light");
   if (activeYear !== "last") q.push(`y=${activeYear}`);
+  if (opts.color) q.push(`color=${opts.color.replace("#", "")}`);
+  if (opts.bg) q.push(`bg=${opts.bg.replace("#", "")}`);
+  const base = `${EMBED_ORIGIN}/u/${activeUsernames.join(",")}.svg`;
   return q.length ? `${base}?${q.join("&")}` : base;
 }
 
@@ -130,6 +166,18 @@ function renderEmbed(): void {
   }
   if (embedCode) embedCode.textContent = embedSnippet();
 }
+
+function refreshEmbed(): void {
+  if (embedPreview && currentQuilt) {
+    embedPreview.innerHTML = renderQuiltSvg(currentQuilt, {
+      ...embedOptions(),
+      embed: true,
+    });
+  }
+  renderEmbed();
+}
+
+// ---- core ----
 
 function errorMessage(reason: unknown): string {
   if (reason instanceof ContributionsError) return reason.message;
@@ -181,10 +229,10 @@ async function run(usernames: string[], year: Year): Promise<void> {
     return;
   }
 
-  const quilt = mergeContributions(sources);
-  renderStats(quilt);
-  if (graphEl) graphEl.innerHTML = renderQuiltSvg(quilt);
-  renderEmbed();
+  currentQuilt = mergeContributions(sources);
+  renderStats(currentQuilt);
+  if (graphEl) graphEl.innerHTML = renderQuiltSvg(currentQuilt);
+  refreshEmbed();
   result?.classList.remove("hidden");
   result?.classList.add("flex");
 
@@ -216,7 +264,13 @@ embedTabs?.addEventListener("click", (event) => {
   renderEmbed();
 });
 
-embedLight?.addEventListener("change", renderEmbed);
+embedColor?.addEventListener("input", refreshEmbed);
+embedBg?.addEventListener("input", refreshEmbed);
+embedReset?.addEventListener("click", () => {
+  if (embedColor) embedColor.value = DEFAULT_COLOR;
+  if (embedBg) embedBg.value = DEFAULT_BG;
+  refreshEmbed();
+});
 
 embedCopy?.addEventListener("click", () => {
   const button = embedCopy;
