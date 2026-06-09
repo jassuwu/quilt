@@ -19,7 +19,7 @@ quilt of green — so your real activity finally looks as busy as it is.
 <a href="https://quilt.jass.gg">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="./docs/assets/readme/quilt-poster.png" />
-    <img src="./docs/assets/readme/quilt-header.gif?v=1" width="900" alt="quilt: scattered GitHub accounts merging into one contribution quilt" />
+    <img src="./docs/assets/readme/quilt-header.gif?v=2" width="900" alt="quilt: scattered GitHub accounts merging into one contribution quilt" />
   </picture>
 </a>
 
