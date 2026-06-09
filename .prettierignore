@@ -1,0 +1,11 @@
+# lockfiles & generated output
+bun.lock
+dist/
+.astro/
+.vercel/
+
+# generated assets
+public/og/
+
+# remotion has its own prettier config
+remotion/
