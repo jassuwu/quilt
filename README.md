@@ -6,8 +6,8 @@
 
 **your contributions, all of them, in one quilt of green.**
 
-merge the GitHub contribution graphs of every account you have into one consolidated
-quilt of green — so your real activity finally looks as busy as it is.
+merge the GitHub contribution graphs of every account you have into one quilt of green.
+split accounts make every profile look half-dead; the quilt is the whole picture.
 
 **try it → [quilt.jass.gg](https://quilt.jass.gg)** · no login, nothing stored
 
@@ -45,27 +45,27 @@ drop your merged quilt into a README or any site with one URL. no build step, no
 [![my contributions](https://quilt.jass.gg/u/jassuwu,torvalds.svg)](https://quilt.jass.gg/?u=jassuwu,torvalds)
 ```
 
-which renders this — live, straight from the CDN, re-stitched as the accounts contribute:
+which renders this, live from the CDN, re-stitched as the accounts contribute:
 
 [![contribution quilt for jassuwu + torvalds](https://quilt.jass.gg/u/jassuwu,torvalds.svg)](https://quilt.jass.gg/?u=jassuwu,torvalds)
 
-style it with query params — `?theme=dracula` (or `nord`, `tokyonight`, `gruvbox`,
+style it with query params: `?theme=dracula` (or `nord`, `tokyonight`, `gruvbox`,
 `catppuccin`, `solarized`, `mono`, `stitch`), `?theme=light` for light READMEs,
-`?color=ff6ac1` and `?bg=160e23` for a custom ramp, `?y=2024` for a specific year —
-or tweak it live on the site, including a `<picture>` snippet that follows GitHub's
-light/dark mode. the SVG is rendered server-side and CDN-cached. it works anywhere
-`<img>` does, GitHub and GitLab READMEs included.
+`?color=ff6ac1` and `?bg=160e23` for a custom ramp, `?y=2024` for a specific year.
+or tweak it live on the site, which also gives you a `<picture>` snippet that follows
+GitHub's light/dark mode. the SVG is rendered server-side and CDN-cached. it works
+anywhere `<img>` does, GitHub and GitLab READMEs included.
 
 ## the data
 
 one source: the [github-contributions-api](https://github.com/grubersjoe/github-contributions-api),
-which scrapes the public profile graph — so it includes the **privatized-but-visible**
+which scrapes the public profile graph. that means it includes the **privatized-but-visible**
 green your profile already shows (when the account has that setting on). see
 [SOURCES.md](SOURCES.md) for why the GitHub GraphQL API doesn't work here.
 
 ## stack
 
-- **Astro 6** + **Tailwind v4** (CSS-first), strict TypeScript, **bun** on **Vercel** — static page + one dynamic, CDN-cached SVG embed route (`@astrojs/vercel`).
+- **Astro 6** + **Tailwind v4** (CSS-first), strict TypeScript, **bun** on **Vercel**: a static page + one dynamic, CDN-cached SVG embed route (`@astrojs/vercel`).
 - pure, unit-tested merge core in `src/lib`; the page, the OG card, and the demo share one green ramp.
 - favicon/PWA icons + the OG share card are generated from one SVG mark via `@resvg/resvg-js`.
 - the hero/social demos are a sibling **Remotion** project in [`remotion/`](remotion/).

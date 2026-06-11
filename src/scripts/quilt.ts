@@ -412,7 +412,7 @@ async function run(usernames: string[], year: Year): Promise<void> {
   const notes: string[] = [];
   if (overflow > 0)
     notes.push(
-      `quilts cap at ${MAX_ACCOUNTS} accounts — dropped the last ${overflow}`,
+      `quilts cap at ${MAX_ACCOUNTS} accounts, dropped the last ${overflow}`,
     );
   if (errors.length)
     notes.push(`skipped: ${errors.map(describeError).join(" · ")}`);
