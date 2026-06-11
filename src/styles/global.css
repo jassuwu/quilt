@@ -79,13 +79,19 @@
   }
 
   /*
-    On phones the fit-to-width year collapses to ~5px patches — let the quilt
-    keep its natural size and scroll instead (the renderer sets max-width as
-    an inline style, hence the !important).
+    The one artifact: the embed card renders at its natural ~800px and scales
+    to the column on desktop. On phones fit-to-width would collapse patches to
+    ~5px and the card footer to illegibility — keep natural size and scroll.
   */
+  #quilt-graph svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
   @media (max-width: 640px) {
     #quilt-graph svg {
-      max-width: none !important;
+      max-width: none;
     }
   }
 }

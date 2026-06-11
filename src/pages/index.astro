@@ -38,6 +38,7 @@ import Layout from "../layouts/Layout.astro";
           stitch →
         </button>
       </form>
+      <!-- one subline slot: the example link before a stitch, notes/errors after -->
       <p id="quilt-example-row" class="text-sm text-muted">
         or <a
           id="quilt-example"
@@ -46,127 +47,119 @@ import Layout from "../layouts/Layout.astro";
           >see an example quilt →</a
         >
       </p>
+      <p
+        id="quilt-status"
+        class="hidden text-sm text-muted"
+        role="status"
+        aria-live="polite"
+      >
+      </p>
     </div>
 
-    <p
-      id="quilt-status"
-      class="hidden text-sm text-muted"
-      role="status"
-      aria-live="polite"
-    >
-    </p>
-
     <section id="quilt-result" class="hidden flex-col gap-8">
-      <dl id="quilt-stats" class="flex flex-wrap gap-x-10 gap-y-4"></dl>
+      <!--
+        the one artifact: the embed card itself is the page quilt. its footer
+        carries the legend, accounts, total and attribution — so the page adds
+        only a quiet caption above and the knobs below.
+      -->
+      <div class="flex flex-col gap-3">
+        <!-- role=status: hearing the merged numbers IS the "done" signal -->
+        <p id="quilt-stats" role="status" class="text-sm text-muted"></p>
 
-      <div id="quilt-years" class="hidden flex-wrap gap-2"></div>
-
-      <div>
-        <div id="quilt-graph" class="overflow-x-auto"></div>
         <div
-          class="mt-3 flex items-center justify-between gap-2 text-xs text-muted"
+          id="quilt-graph"
+          tabindex="0"
+          role="region"
+          aria-label="merged contribution quilt — scrolls horizontally on small screens"
+          class="overflow-x-auto transition-opacity duration-300"
         >
-          <span class="inline-flex items-center gap-4">
-            <button
-              id="quilt-share"
-              type="button"
-              class="text-stitch underline-offset-2 hover:underline"
-              >copy link</button
-            >
-            <button
-              id="quilt-download"
-              type="button"
-              class="text-stitch underline-offset-2 hover:underline"
-              >download png</button
-            >
-          </span>
-          <span class="inline-flex items-center gap-2">
-            <span>less</span>
-          <span class="inline-flex items-center gap-[3px]">
-            <!-- swatches mirror src/lib/levels.ts LEVEL_HEX -->
-            <span
-              class="inline-block size-[11px] rounded-[2px]"
-              style="background:#161b22"></span>
-            <span
-              class="inline-block size-[11px] rounded-[2px]"
-              style="background:#0e4429"></span>
-            <span
-              class="inline-block size-[11px] rounded-[2px]"
-              style="background:#006d32"></span>
-            <span
-              class="inline-block size-[11px] rounded-[2px]"
-              style="background:#26a641"></span>
-            <span
-              class="inline-block size-[11px] rounded-[2px]"
-              style="background:#39d353"></span>
-          </span>
-            <span>more</span>
-          </span>
         </div>
-      </div>
-
-      <div class="flex flex-col gap-4 border-t border-dashed border-seam pt-6">
-        <p class="text-sm text-muted">
-          embed your live quilt — drop it in your README or portfolio, it keeps
-          itself current. style it to match your site:
-        </p>
-
-        <div id="quilt-embed-preview" class="overflow-x-auto"></div>
 
         <div
           class="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted"
         >
           <label class="flex items-center gap-2">
-            theme
+            year
             <select
-              id="quilt-embed-theme"
+              id="quilt-year"
               class="cursor-pointer rounded-lg border border-seam bg-surface px-2.5 py-1.5 text-sm text-text outline-none focus:border-accent"
             ></select>
           </label>
           <label class="flex items-center gap-2">
-            graph
-            <input
-              id="quilt-embed-color"
-              type="color"
-              value="#39d353"
-              aria-label="graph color"
-              class="size-7 cursor-pointer rounded border border-seam bg-transparent"
-            />
+            theme
+            <select
+              id="quilt-theme"
+              class="cursor-pointer rounded-lg border border-seam bg-surface px-2.5 py-1.5 text-sm text-text outline-none focus:border-accent"
+            ></select>
           </label>
-          <label class="flex items-center gap-2">
-            background
-            <input
-              id="quilt-embed-bg"
-              type="color"
-              value="#0d1117"
-              aria-label="background color"
-              class="size-7 cursor-pointer rounded border border-seam bg-transparent"
-            />
-          </label>
-          <span class="text-xs">(and pick a year above)</span>
-          <button
-            id="quilt-embed-reset"
-            type="button"
-            class="text-stitch underline-offset-2 hover:underline">reset</button
-          >
+          <span id="quilt-custom" class="hidden items-center gap-x-6 gap-y-3">
+            <label class="flex items-center gap-2">
+              graph
+              <input
+                id="quilt-color"
+                type="color"
+                value="#39d353"
+                aria-label="graph color"
+                class="size-7 cursor-pointer rounded border border-seam bg-transparent"
+              />
+            </label>
+            <label class="flex items-center gap-2">
+              background
+              <input
+                id="quilt-bg"
+                type="color"
+                value="#0d1117"
+                aria-label="background color"
+                class="size-7 cursor-pointer rounded border border-seam bg-transparent"
+              />
+            </label>
+          </span>
         </div>
+      </div>
 
-        <div class="flex flex-col gap-2">
-          <div id="quilt-embed-tabs" class="flex gap-1 text-xs"></div>
-          <div class="flex items-stretch gap-2">
-            <code
-              id="quilt-embed-code"
-              class="flex-1 overflow-x-auto whitespace-nowrap rounded-lg border border-seam bg-surface px-3 py-2.5 font-mono text-sm text-text"
-            ></code>
-            <button
-              id="quilt-embed-copy"
-              type="button"
-              class="shrink-0 rounded-lg bg-accent px-4 font-medium text-bg transition hover:brightness-110"
-            >
-              copy
-            </button>
-          </div>
+      <div class="flex flex-col gap-3">
+        <p class="text-sm text-muted">
+          what you see is what you paste — this exact card, live in your README,
+          anywhere an <code class="font-mono text-xs text-text"
+            >&lt;img&gt;</code
+          > works:
+        </p>
+        <div class="flex flex-wrap items-stretch gap-2">
+          <select
+            id="quilt-fmt"
+            aria-label="embed format"
+            class="cursor-pointer rounded-lg border border-seam bg-surface px-2.5 py-1.5 text-sm text-text outline-none focus:border-accent"
+          >
+            <option value="md">markdown</option>
+            <option value="html">html</option>
+            <option value="auto">auto light/dark</option>
+            <option value="url">url</option>
+          </select>
+          <code
+            id="quilt-embed-code"
+            class="min-w-48 flex-1 overflow-x-auto whitespace-nowrap rounded-lg border border-seam bg-surface px-3 py-2.5 font-mono text-sm text-text"
+          ></code>
+          <button
+            id="quilt-embed-copy"
+            type="button"
+            class="shrink-0 rounded-lg bg-accent px-4 py-2 font-medium text-bg transition hover:brightness-110"
+          >
+            copy
+          </button>
         </div>
+        <p class="text-xs text-muted">
+          or: <button
+            id="quilt-share"
+            type="button"
+            class="-mx-1 -my-2 px-1 py-2 text-stitch underline-offset-2 hover:underline"
+            >copy link</button
+          > · <button
+            id="quilt-download"
+            type="button"
+            class="-mx-1 -my-2 px-1 py-2 text-stitch underline-offset-2 hover:underline"
+            >download png</button
+          >
+        </p>
       </div>
     </section>
 
@@ -177,18 +170,18 @@ import Layout from "../layouts/Layout.astro";
         how it works
       </h2>
       <p>
-        type your GitHub usernames and quilt fetches each account's
-        contribution calendar, sums every day's count across accounts,
-        recomputes the green levels from the merged distribution, and paints
-        them into one quilt — so activity split across a work account and a
-        personal one finally reads as the single busy graph it really is.
+        type your GitHub usernames and quilt fetches each account's contribution
+        calendar, sums every day's count across accounts, recomputes the green
+        levels from the merged distribution, and paints them into one quilt — so
+        activity split across a work account and a personal one finally reads as
+        the single busy graph it really is.
       </p>
       <p>
         no login. nothing stored. the fetch and merge happen in your browser,
         and the result lives in the URL, so it's a shareable link. the embed is
         one server-rendered SVG that works anywhere an
-        <code class="font-mono text-xs text-text">&lt;img&gt;</code> does —
-        GitHub and GitLab READMEs included.
+        <code class="font-mono text-xs text-text">&lt;img&gt;</code> does — GitHub
+        and GitLab READMEs included.
       </p>
     </section>
 
