@@ -1,11 +1,5 @@
 <div align="center">
-
-<img src="./public/icon-512.png" width="76" alt="quilt" />
-
 # quilt
-
-**your contributions, all of them, in one quilt of green.**
-
 <a href="https://quilt.jass.gg">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="./docs/assets/readme/quilt-poster.png" />
