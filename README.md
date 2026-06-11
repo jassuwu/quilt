@@ -6,16 +6,6 @@
 
 **your contributions, all of them, in one quilt of green.**
 
-merge the GitHub contribution graphs of every account you have into one quilt of green.
-split accounts make every profile look half-dead; the quilt is the whole picture.
-
-**try it → [quilt.jass.gg](https://quilt.jass.gg)** · no login, nothing stored
-
-[![live](https://img.shields.io/badge/live-quilt.jass.gg-39d353?style=flat-square)](https://quilt.jass.gg)
-![license](https://img.shields.io/badge/license-MIT-39d353?style=flat-square)
-![built with astro](https://img.shields.io/badge/built%20with-Astro%206-39d353?style=flat-square)
-![data](https://img.shields.io/badge/data-github--contributions--api-e8a87c?style=flat-square)
-
 <a href="https://quilt.jass.gg">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="./docs/assets/readme/quilt-poster.png" />
@@ -25,73 +15,41 @@ split accounts make every profile look half-dead; the quilt is the whole picture
 
 _every account, one quilt._
 
+**try it → [quilt.jass.gg](https://quilt.jass.gg)** · no login, nothing stored
+
 </div>
-
-## how it works
-
-type your GitHub usernames → quilt fetches each account's contribution calendar,
-**sums every day's count across accounts**, recomputes the green levels from the merged
-distribution, and paints them into one quilt. the result lives in the URL
-([quilt.jass.gg/?u=jassuwu,torvalds](https://quilt.jass.gg/?u=jassuwu,torvalds)), so it's
-a shareable link.
-
-no login. nothing stored. all fetch + merge happens in your browser.
 
 ## embed it anywhere
 
-drop your merged quilt into a README or any site with one URL. no build step, no JS:
+one line in a README, live from the CDN, re-stitched as the accounts contribute:
 
 ```md
 [![my contributions](https://quilt.jass.gg/u/jassuwu,torvalds.svg)](https://quilt.jass.gg/?u=jassuwu,torvalds)
 ```
 
-which renders this, live from the CDN, re-stitched as the accounts contribute:
-
 [![contribution quilt for jassuwu + torvalds](https://quilt.jass.gg/u/jassuwu,torvalds.svg)](https://quilt.jass.gg/?u=jassuwu,torvalds)
 
-style it with query params: `?theme=dracula` (or `nord`, `tokyonight`, `gruvbox`,
-`catppuccin`, `solarized`, `mono`, `stitch`), `?theme=light` for light READMEs,
-`?color=ff6ac1` and `?bg=160e23` for a custom ramp, `?y=2024` for a specific year.
-or tweak it live on the site, which also gives you a `<picture>` snippet that follows
-GitHub's light/dark mode. the SVG is rendered server-side and CDN-cached. it works
-anywhere `<img>` does, GitHub and GitLab READMEs included.
+style it with `?theme=dracula` (or nord, tokyonight, gruvbox, catppuccin, solarized,
+mono, stitch), `?theme=light`, a custom `?color`/`?bg` ramp, `?y=2024` for a year.
+or restyle it live on [the site](https://quilt.jass.gg) and copy the snippet.
 
-## the data
+## how it works
 
-one source: the [github-contributions-api](https://github.com/grubersjoe/github-contributions-api),
-which scrapes the public profile graph. that means it includes the **privatized-but-visible**
-green your profile already shows (when the account has that setting on). see
-[SOURCES.md](SOURCES.md) for why the GitHub GraphQL API doesn't work here.
+type your GitHub usernames and quilt fetches each account's contribution calendar,
+sums every day's count across accounts, recomputes the green levels from the merged
+distribution, and paints one quilt. it all runs in your browser, and the result lives
+in the URL ([quilt.jass.gg/?u=jassuwu,torvalds](https://quilt.jass.gg/?u=jassuwu,torvalds)),
+so it's a shareable link.
 
-## stack
+the data comes from the [github-contributions-api](https://github.com/grubersjoe/github-contributions-api),
+which reads the public profile graph, including the **privatized-but-visible** green
+your profile already shows (when the account has that setting on).
+[SOURCES.md](SOURCES.md) explains why the official API can't do this.
 
-- **Astro 6** + **Tailwind v4** (CSS-first), strict TypeScript, **bun** on **Vercel**: a static page + one dynamic, CDN-cached SVG embed route (`@astrojs/vercel`).
-- pure, unit-tested merge core in `src/lib`; the page, the OG card, and the demo share one green ramp.
-- favicon/PWA icons + the OG share card are generated from one SVG mark via `@resvg/resvg-js`.
-- the hero/social demos are a sibling **Remotion** project in [`remotion/`](remotion/).
+---
 
-## commands
+<div align="center">
 
-```sh
-bun install
-bun run dev        # local dev server
-bun run test       # unit tests (merge + levels)
-bun run typecheck  # astro check
-bun run build      # static build → dist/
-bun run icons      # regenerate favicon + PWA icon set
-bun run og         # regenerate the default OG share card
+[MIT](LICENSE) · data via [github-contributions-api](https://github.com/grubersjoe/github-contributions-api) · not affiliated with GitHub
 
-cd remotion && bun install
-bun run dev          # Remotion studio
-bun run poster       # still → out/quilt-poster.png
-bun run render:hero  # hero demo → out/quilt-hero.mp4
-```
-
-## attribution
-
-contribution data via [grubersjoe/github-contributions-api](https://github.com/grubersjoe/github-contributions-api).
-fonts: Bricolage Grotesque, Inter, JetBrains Mono (via [Fontsource](https://fontsource.org)).
-
-## license
-
-[MIT](LICENSE)
+</div>
