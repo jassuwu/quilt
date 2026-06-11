@@ -1,5 +1,7 @@
 <div align="center">
+
 # quilt
+
 <a href="https://quilt.jass.gg">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="./docs/assets/readme/quilt-poster.png" />
