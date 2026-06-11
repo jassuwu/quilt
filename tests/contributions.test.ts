@@ -65,10 +65,9 @@ describe("fetchContributions", () => {
     let calls = 0;
     const fetchImpl = (async () => {
       calls += 1;
-      return new Response(
-        JSON.stringify({ total: {}, contributions: [] }),
-        { status: 200 },
-      );
+      return new Response(JSON.stringify({ total: {}, contributions: [] }), {
+        status: 200,
+      });
     }) as unknown as typeof fetch;
 
     try {

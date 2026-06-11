@@ -83,9 +83,9 @@ export const GET: APIRoute = async ({ params, url }) => {
     outcome.status === "fulfilled" ? [outcome.value] : [],
   );
   if (!sources.length) {
-    const failure = settled.find(
-      (outcome) => outcome.status === "rejected",
-    ) as PromiseRejectedResult | undefined;
+    const failure = settled.find((outcome) => outcome.status === "rejected") as
+      | PromiseRejectedResult
+      | undefined;
     const reason = failure?.reason;
     const message =
       reason instanceof ContributionsError
