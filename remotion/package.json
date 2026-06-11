@@ -1,7 +1,7 @@
 {
   "name": "remotion",
   "version": "1.0.0",
-  "description": "quilt — animated demos (hero + social) for the README and socials",
+  "description": "quilt \u2014 animated demos (hero + social) for the README and socials",
   "repository": {},
   "license": "UNLICENSED",
   "private": true,
@@ -28,10 +28,11 @@
     "upgrade": "remotionb upgrade",
     "lint": "eslint src && tsc",
     "sfx": "bun run scripts/build-sfx.ts",
-    "poster": "remotionb still src/index.ts hero out/quilt-poster.png --frame=246",
+    "poster": "remotionb still src/index.ts hero out/quilt-poster.png --frame=156",
     "render:hero": "remotionb render src/index.ts hero out/quilt-hero.mp4",
     "render:social": "bun run sfx && remotionb render src/index.ts social out/quilt-social.mp4",
-    "render:all": "bun run poster && bun run render:hero && bun run render:social"
+    "render:all": "bun run poster && bun run render:hero && bun run render:social",
+    "gif": "remotionb render src/index.ts hero out/quilt-header-raw.gif --codec=gif --every-nth-frame=2 --scale=0.5 && gifsicle -O3 --lossy=80 --colors 128 out/quilt-header-raw.gif -o ../docs/assets/readme/quilt-header.gif"
   },
   "sideEffects": [
     "*.css"

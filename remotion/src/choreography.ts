@@ -1,21 +1,19 @@
 /**
- * Frame timeline for the quilt launch demo (30fps).
+ * Frame timeline for the quilt demo (30fps).
  *
- * Three acts: scatter → impact → afterglow. The held breath before the
- * slam (HOLD → SLAM) is the structural beat everything tunes around:
- * the riser dies into it, the screen stills, then the quilt lands.
+ * Three calm beats, same as the product: scattered accounts converge,
+ * they become one quilt, and the quilt is yours to embed in any color.
+ * No impact, no camera — the README header should feel like the site.
  */
-export const FAN_END = 32; // scattered accounts have fanned in
-export const GATHER_END = 54; // ...converged into a single stack
-export const SLAM = 60; // the merge lands (5 silent frames before it)
-export const DENSIFY_END = 88; // merged quilt blooms out from the impact
-export const SPIN_START = 92; // counter winds up...
-export const SPIN_END = 138; // ...and lands on 1,337 (the ding — the peak)
-export const REVEAL_START = 144; // a green shimmer sweeps the finished quilt
-export const WORD_START = 184; // number hands off to the wordmark + stitch line
-export const EMBED_START = 222; // "embed it anywhere" snippet — the hook
-export const THEME_STEPS = [248, 266, 284] as const; // dracula → nord → tokyonight
-export const THEME_HOME = 302; // ...and home to green
-export const HERO_DURATION = 318; // silent README hero
-export const CTA_START = 322;
-export const SOCIAL_DURATION = 400; // + CTA end card (room for the chord's tail)
+export const CARD_STAGGER = 8; // frames between account cards arriving
+export const FAN_END = 34; // scattered accounts have fanned in
+export const GATHER_END = 62; // ...and converged into a single stack
+export const MERGE_START = 62; // the stack resolves into the merged quilt
+export const MERGE_END = 88; // one quilt
+export const WORD_START = 98; // wordmark + the stitch seam + tagline
+export const EMBED_START = 132; // "embed it anywhere" snippet — the hook
+export const THEME_STEPS = [158, 180, 202] as const; // dracula → nord → tokyonight
+export const THEME_HOME = 224; // ...and home to green
+export const HERO_DURATION = 246; // silent README hero (~8s)
+export const CTA_START = 250;
+export const SOCIAL_DURATION = 320; // + CTA end card (room for the chord's tail)
